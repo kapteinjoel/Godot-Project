@@ -1,7 +1,8 @@
-[gd_scene load_steps=26 format=3 uid="uid://bjy1a2h1aq2ok"]
+[gd_scene load_steps=27 format=3 uid="uid://bjy1a2h1aq2ok"]
 
 [ext_resource type="Script" uid="uid://db6g1ph7mb766" path="res://scripts/gui/fps_label.gd" id="1_rwo3j"]
 [ext_resource type="Script" uid="uid://cv6u16qbqrl1j" path="res://scripts/game/day_night_cycle.gd" id="2_ph5vl"]
+[ext_resource type="Texture2D" uid="uid://bnuwv3byqmibl" path="res://assets/images/tilesets/game_ui.png" id="2_vaxfo"]
 [ext_resource type="Script" uid="uid://ccwa4p2ggrcj2" path="res://scripts/game/world_gen.gd" id="3_5rpqn"]
 [ext_resource type="Shader" uid="uid://c8foluqwxplt5" path="res://assets/shaders/foliage_sway.gdshader" id="4_yvoo5"]
 [ext_resource type="Texture2D" uid="uid://ohxln8hb5mlu" path="res://assets/images/tilesets/Grass.png" id="5_y7cus"]
@@ -2160,6 +2161,18 @@ offset_right = 40.0
 offset_bottom = 23.0
 script = ExtResource("1_rwo3j")
 
+[node name="HealthBar" type="GridContainer" parent="UI/HUD"]
+z_index = 10
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Sprite2D" type="Sprite2D" parent="UI/HUD/HealthBar"]
+position = Vector2(1842, 40)
+scale = Vector2(4, 4)
+texture = ExtResource("2_vaxfo")
+region_enabled = true
+region_rect = Rect2(-0.05160427, -0.12470102, 33.084576, 8.094673)
+
 [node name="DayNightCycle" type="Node2D" parent="."]
 texture_filter = 2
 script = ExtResource("2_ph5vl")
@@ -2168,11 +2181,10 @@ ambient_color_gradient = SubResource("Gradient_6fgid")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="DayNightCycle"]
 
-[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+[node name="World" type="Node2D" parent="."]
 z_as_relative = false
 y_sort_enabled = true
 script = ExtResource("3_5rpqn")
-player = NodePath("")
 
 [node name="SaveTimer" type="Timer" parent="World"]
 autostart = true
@@ -2223,6 +2235,10 @@ bee_scene = ExtResource("12_ftsea")
 [node name="Objects" type="Container" parent="World"]
 z_index = 7
 y_sort_enabled = true
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Mobs" type="Container" parent="World"]
 offset_right = 40.0
 offset_bottom = 40.0
 

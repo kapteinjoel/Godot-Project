@@ -100,6 +100,7 @@ func _ready() -> void:
 		$SaveTimer.timeout.connect(_on_save_timer_timeout) # Start timer to save world data
 		# Spawn the host (you)
 		player = spawn_player(1)
+		mob_manager.set_process(true)
 		set_process(true)
 		
 
@@ -325,78 +326,77 @@ func between(val, start, end):
 		return true
 
 func generate_forest(tile_pos, chunk_coords: Vector2i):
-	var detail_noise = altitude.get_noise_2d(tile_pos.x * 15.0, tile_pos.y * 15.0) # used to generate micro biomes
-	var secondary_detail_noise = altitude.get_noise_2d(tile_pos.x * 50.0, tile_pos.y * 50.0) # used to spawn floor decor
-	var density = altitude.get_noise_2d(tile_pos.x * 2.0, tile_pos.y * 2.0) # used to control frequency of micro biomes
+	var detail_noise = altitude.get_noise_2d(tile_pos.x * 15.0, tile_pos.y * 15.0)
+	var secondary_detail_noise = altitude.get_noise_2d(tile_pos.x * 50.0, tile_pos.y * 50.0)
+	var density = altitude.get_noise_2d(tile_pos.x * 2.0, tile_pos.y * 2.0)
+
 	if detail_noise < -0.6 and density < -0.3: # WATER
 		BetterTerrain.set_cell(tilemap, Layers.UNDERWATER, tile_pos, Terrain.SAND)
 		BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
 		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
-	elif between(detail_noise, -1, -.5) and density < -0.25: # SAND BORDERS AROUND WATER
+
+	elif between(detail_noise, -1.0, -0.5) and density < -0.25: # SAND / POND BORDERS
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
-		if between(detail_noise, -0.7, -.57):
-			if 0.2 < object_spawn_rng.randf() and object_spawn_rng.randf() < 0.9:
+		var roll = object_spawn_rng.randf()
+		if between(detail_noise, -0.7, -0.57):
+			if between(roll, 0.2, 0.9):
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
-				varieties = ["forest_pond_reed_1","forest_pond_reed_2","forest_pond_reed_3"]
-				random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-				new_plant.set_plant_type(random_type)
-		elif between(detail_noise, -.52, -.5):
-			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4","forest_ground_grass_5"]
-			random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[random_type])
-			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-			if 0 < object_spawn_rng.randf() and object_spawn_rng.randf() < 0.3:
+				varieties = ["forest_pond_reed_1", "forest_pond_reed_2", "forest_pond_reed_3"]
+				new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
+		elif between(detail_noise, -0.54, -0.52):
+			if roll < 0.5:
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
-				random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-				new_plant.set_plant_type(random_type)
-		elif between(detail_noise, -.54, -.52):
-			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-			if 0 < object_spawn_rng.randf() and object_spawn_rng.randf() < 0.5:
+				varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
+				new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
+		elif between(detail_noise, -0.52, -0.5):
+			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+			if roll < 0.3:
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
-				random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-				new_plant.set_plant_type(random_type)
-	elif between(detail_noise, .1, 0.3): # MATTED GRASS
+				varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
+				new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
+
+	elif between(detail_noise, 0.1, 0.3): # MATTED GRASS
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.MATTED_GRASS)
-		# Foliage
-		if 0.6 < object_spawn_rng.randf() and object_spawn_rng.randf() < 0.9:
+		var roll = object_spawn_rng.randf()
+		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
-			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5",]
-			random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-			new_plant.set_plant_type(random_type)
-		elif object_spawn_rng.randf() > 0.95 and object_spawn_rng.randf() < 0.97:
+			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
+			new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
+		elif between(roll, 0.8, 0.9) and not is_suppressed_by_nearby_tree(tile_pos, 1):
 			var new_tree = spawn_object(tile_pos, chunk_coords, tree)
 			new_tree.player = player
 			new_tree.set_tree_type(new_tree.TREE_TYPE.PINE_LARGE_1)
-		elif object_spawn_rng.randf() > 0.97 and object_spawn_rng.randf() < 1.0 :
+		elif roll >= 0.9 and not is_suppressed_by_nearby_tree(tile_pos, 1):
 			var new_tree = spawn_object(tile_pos, chunk_coords, tree)
 			new_tree.player = player
 			new_tree.set_tree_type(new_tree.TREE_TYPE.PINE_LARGE_2)
-			
+
 	elif between(detail_noise, 0.6, 0.7): # STONE MICRO BIOME
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.STONE)
-		if object_spawn_rng.randf() > .95:
+		if between(detail_noise, 0.6, 0.63):
+			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+		if object_spawn_rng.randf() > 0.95:
 			spawn_object(tile_pos, chunk_coords, placeable)
-	else: # FILL WITH FOREST
-		# Grass/Tiles
+
+	else: # FOREST
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.MATTED_GRASS)
 		BetterTerrain.set_cell(tilemap, Layers.FLOOR, tile_pos, Terrain.GRASS)
-		# Floor Decor (flowers pebbles etc)
-		if between(secondary_detail_noise, .4, 8):
+		if between(secondary_detail_noise, 0.4, 8.0):
 			varieties = ["forest_flower_white_1", "forest_flower_white_2", "forest_flower_white_3", "forest_flower_white_4", "forest_flower_white_5"]
-			random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[random_type])
-		# Foliage
-		if 0.6 < object_spawn_rng.randf() and object_spawn_rng.randf() < 0.9:
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+		var roll = object_spawn_rng.randf()
+		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-			random_type = varieties[object_spawn_rng.randi() % varieties.size()]
-			new_plant.set_plant_type(random_type)
-		elif object_spawn_rng.randf() > 0.95 and object_spawn_rng.randf() < 0.97 :
+			new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
+		elif between(roll, 0.8, 0.9) and not is_suppressed_by_nearby_tree(tile_pos, 3):
 			var new_tree = spawn_object(tile_pos, chunk_coords, tree)
 			new_tree.player = player
 			new_tree.set_tree_type(new_tree.TREE_TYPE.OAK_LARGE_1)
-		elif object_spawn_rng.randf() > 0.97 and object_spawn_rng.randf() < 1.0:
+		elif roll >= 0.9 and not is_suppressed_by_nearby_tree(tile_pos, 3):
 			var new_tree = spawn_object(tile_pos, chunk_coords, tree)
 			new_tree.player = player
 			new_tree.set_tree_type(new_tree.TREE_TYPE.OAK_LARGE_2)
@@ -409,6 +409,35 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	instance.tile_pos = tile_pos
 	container.add_child(instance)
 	return instance
+	
+func wants_to_be_tree(tile_pos: Vector2i) -> bool:
+	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
+	var rng = RandomNumberGenerator.new()
+	rng.seed = tile_seed
+	var roll = rng.randf()
+	return roll > 0.8
+
+func tree_priority(tile_pos: Vector2i) -> float:
+	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
+	var rng = RandomNumberGenerator.new()
+	rng.seed = tile_seed
+	rng.randf()
+	return rng.randf()
+
+func is_suppressed_by_nearby_tree(tile_pos: Vector2i, min_distance: int) -> bool:
+	if not wants_to_be_tree(tile_pos):
+		return true
+	var my_priority = tree_priority(tile_pos)
+	for dx in range(-min_distance, min_distance + 1):
+		for dy in range(-min_distance, min_distance + 1):
+			if dx == 0 and dy == 0:
+				continue
+			var neighbor = tile_pos + Vector2i(dx, dy)
+			if wants_to_be_tree(neighbor):
+				var neighbor_priority = tree_priority(neighbor)
+				if neighbor_priority > my_priority:
+					return true
+	return false
 
 
 # MULTIPLAYER STUFF
@@ -441,7 +470,6 @@ func spawn_player(id: int):
 	players_container.add_child(new_player)
 	return new_player
 	
-
 func _on_peer_disconnected(id: int):
 	if players_container.has_node(str(id)):
 		players_container.get_node(str(id)).queue_free()

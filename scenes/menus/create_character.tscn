@@ -597,7 +597,7 @@ render_target_update_mode = 4
 [node name="Player" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport" instance=ExtResource("11_w388w")]
 texture_filter = 1
 
-[node name="Camera2D" type="Camera2D" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player"]
+[node name="Camera2D2" type="Camera2D" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player"]
 texture_filter = 1
 position = Vector2(0.2, -6.5)
 zoom = Vector2(2, 2)

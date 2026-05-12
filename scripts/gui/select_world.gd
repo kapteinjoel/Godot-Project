@@ -156,3 +156,7 @@ func _on_back_button_pressed() -> void:
 
 func _on_new_button_pressed() -> void:
 	Global.game_controller.change_gui_scene("res://scenes/menus/create_world.tscn")
+
+
+func _on_second_back_button_pressed() -> void:
+	pass # Replace with function body.
