@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://d0a6lfupbs1od"]
+[gd_scene load_steps=8 format=3 uid="uid://d0a6lfupbs1od"]
 
 [ext_resource type="Script" uid="uid://ysbm85efxnpi" path="res://scripts/gui/main_menu.gd" id="1_gm3hr"]
 [ext_resource type="Shader" uid="uid://cxd03ly0r6a6t" path="res://assets/shaders/fog.gdshader" id="2_5lglp"]
 [ext_resource type="Texture2D" uid="uid://g7m6vi4ixxrc" path="res://assets/images/ui/menubutton.png" id="3_2o76q"]
+[ext_resource type="Texture2D" uid="uid://t0x2gcert2xj" path="res://assets/images/ui/title.png" id="3_6bivr"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_5u42d"]
 
@@ -87,6 +88,10 @@ text = "Settings"
 layout_mode = 2
 text = "Exit Game
 "
+
+[node name="Title" type="Sprite2D" parent="VBoxContainer"]
+position = Vector2(37.5, -13.5)
+texture = ExtResource("3_6bivr")
 
 [node name="Menubutton" type="Sprite2D" parent="."]
 visible = false

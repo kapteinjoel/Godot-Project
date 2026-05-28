@@ -5,12 +5,20 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vfdns"]
 atlas = ExtResource("1_fpc65")
-region = Rect2(17, 2, 30, 28)
+region = Rect2(80.004295, 63.918102, 16.018303, 16.170864)
 
 [node name="Staticobject" type="Node2D"]
 script = ExtResource("1_vfdns")
+atlas_texture = ExtResource("1_fpc65")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = SubResource("AtlasTexture_vfdns")
 centered = false
 offset = Vector2(-15, -28)
+region_enabled = true
+
+[node name="Stems" type="Sprite2D" parent="."]
+texture = SubResource("AtlasTexture_vfdns")
+centered = false
+offset = Vector2(-15, -28)
+region_enabled = true

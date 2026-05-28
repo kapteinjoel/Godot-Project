@@ -6,6 +6,7 @@ extends Node2D
 @export var tree_type: TREE_TYPE
 
 @onready var tree_sprite := $Tree
+@onready var tree_reflection_sprite := $Tree/TreeReflection
 @onready var shadow_sprite := $Tree/Shadow
 
 var tile_pos: Vector2i  # This "mailbox" must exist for the assignment to work!
@@ -52,10 +53,27 @@ const TREE_SHADOW_REGIONS := {
 	TREE_TYPE.PINE_LARGE_2:  Rect2i(159, 0, 49, 70),
 }
 
+const TREE_SHADOW_OFFSETS := {
+	TREE_TYPE.OAK_LARGE_1: -9,
+	TREE_TYPE.OAK_LARGE_2: -9, 
+	TREE_TYPE.PINE_LARGE_1: -25,
+	TREE_TYPE.PINE_LARGE_2: -25,
+}
+
+const TREE_REFLECTION_OFFSETS := {
+	TREE_TYPE.OAK_LARGE_1:  Vector2(0, 0),
+	TREE_TYPE.OAK_LARGE_2:  Vector2(0, 0),
+	TREE_TYPE.PINE_LARGE_1: Vector2(0, 0),
+	TREE_TYPE.PINE_LARGE_2: Vector2(0, 0),
+}
+
 func _ready():
 	tree_sprite.texture = atlas_texture
 	tree_sprite.region_enabled = true
 	tree_sprite.region_rect = TREE_REGIONS[tree_type]
+	tree_reflection_sprite.texture = atlas_texture
+	tree_reflection_sprite.region_enabled = true
+	tree_reflection_sprite.region_rect = TREE_REGIONS[tree_type]
 	shadow_sprite.texture = atlas_texture_2
 	shadow_sprite.region_rect = TREE_SHADOW_REGIONS[tree_type]
 	shadow_sprite.region_enabled = true
@@ -72,16 +90,25 @@ func set_tree_type(type: TREE_TYPE) -> void:
 func _apply_tree_type():
 	tree_sprite.texture = atlas_texture
 	tree_sprite.region_enabled = true
+	tree_reflection_sprite.texture = atlas_texture
+	tree_reflection_sprite.region_enabled = true
 	if tree_sprite.material:
 		tree_sprite.material = tree_sprite.material.duplicate()
+	if tree_reflection_sprite.material:
+		tree_reflection_sprite.material = tree_sprite.material.duplicate()
 	if TREE_REGIONS.has(tree_type):
 		tree_sprite.region_rect = TREE_REGIONS[tree_type]
+		tree_reflection_sprite.region_rect = TREE_REGIONS[tree_type]
 	if TREE_OFFSETS.has(tree_type):
 		tree_sprite.offset = TREE_OFFSETS[tree_type]
 	if TREE_SHADOW_REGIONS.has(tree_type):
 		shadow_sprite.region_rect = TREE_SHADOW_REGIONS[tree_type]
+	if TREE_SHADOW_OFFSETS.has(tree_type):
+		shadow_sprite.position.y = TREE_SHADOW_OFFSETS[tree_type]
+	if TREE_REFLECTION_OFFSETS.has(tree_type):
+		tree_reflection_sprite.offset = TREE_OFFSETS[tree_type] + TREE_REFLECTION_OFFSETS[tree_type]
 	if tree_sprite.material is ShaderMaterial:
-		var h_offset = TREE_HEIGHT_OFFSETS.get(tree_type, 0.99) # Default to 0.99
+		var h_offset = TREE_HEIGHT_OFFSETS.get(tree_type, 0.99)
 		tree_sprite.material.set_shader_parameter("heightOffset", h_offset)
 	else:
 		print('fail')

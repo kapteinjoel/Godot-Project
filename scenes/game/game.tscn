@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://bjy1a2h1aq2ok"]
+[gd_scene load_steps=33 format=3 uid="uid://bjy1a2h1aq2ok"]
 
 [ext_resource type="Script" uid="uid://db6g1ph7mb766" path="res://scripts/gui/fps_label.gd" id="1_rwo3j"]
 [ext_resource type="Script" uid="uid://cv6u16qbqrl1j" path="res://scripts/game/day_night_cycle.gd" id="2_ph5vl"]
@@ -1318,9 +1318,9 @@ texture = ExtResource("5_y7cus")
 0:28/animation_frame_3/duration = 1.0
 0:28/0 = 0
 0:28/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
-8: [12],
+8: [14],
 12: [10],
 &"type": 10
 }
@@ -1333,9 +1333,9 @@ texture = ExtResource("5_y7cus")
 0:31/animation_frame_3/duration = 1.0
 0:31/0 = 0
 0:31/0/metadata/_better_terrain = {
-0: [12],
-4: [12],
-8: [12],
+0: [14],
+4: [14],
+8: [14],
 12: [10],
 &"type": 10
 }
@@ -1354,10 +1354,10 @@ texture = ExtResource("5_y7cus")
 0:37/0 = 0
 0:37/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -1372,10 +1372,10 @@ texture = ExtResource("5_y7cus")
 0:40/0/metadata/_better_terrain = {
 0: [10],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 0:43/size_in_atlas = Vector2i(3, 3)
@@ -1387,11 +1387,11 @@ texture = ExtResource("5_y7cus")
 0:43/animation_frame_3/duration = 1.0
 0:43/0 = 0
 0:43/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -1405,11 +1405,11 @@ texture = ExtResource("5_y7cus")
 0:46/0 = 0
 0:46/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-8: [12],
+8: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 0:49/size_in_atlas = Vector2i(3, 3)
@@ -1422,11 +1422,11 @@ texture = ExtResource("5_y7cus")
 0:49/0 = 0
 0:49/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 0:52/size_in_atlas = Vector2i(3, 3)
@@ -1439,11 +1439,11 @@ texture = ExtResource("5_y7cus")
 0:52/0 = 0
 0:52/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
+4: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 0:55/size_in_atlas = Vector2i(3, 3)
@@ -1457,11 +1457,11 @@ texture = ExtResource("5_y7cus")
 0:55/0/metadata/_better_terrain = {
 0: [10],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 0:58/size_in_atlas = Vector2i(3, 3)
@@ -1474,13 +1474,13 @@ texture = ExtResource("5_y7cus")
 0:58/0 = 0
 0:58/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
 7: [10],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 12:58/size_in_atlas = Vector2i(3, 3)
@@ -1493,11 +1493,11 @@ texture = ExtResource("5_y7cus")
 12:58/0 = 0
 12:58/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 15: [10],
 &"type": 10
@@ -1512,13 +1512,13 @@ texture = ExtResource("5_y7cus")
 12:55/0 = 0
 12:55/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
 11: [10],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 12:52/size_in_atlas = Vector2i(3, 3)
@@ -1531,10 +1531,10 @@ texture = ExtResource("5_y7cus")
 12:52/0 = 0
 12:52/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
-8: [12],
+4: [14],
+8: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 12:49/size_in_atlas = Vector2i(3, 3)
@@ -1547,9 +1547,9 @@ texture = ExtResource("5_y7cus")
 12:49/0 = 0
 12:49/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-8: [12],
+8: [14],
 12: [10],
 15: [10],
 &"type": 10
@@ -1564,10 +1564,10 @@ texture = ExtResource("5_y7cus")
 12:46/0 = 0
 12:46/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-8: [12],
-12: [12],
+8: [14],
+12: [14],
 &"type": 10
 }
 12:43/size_in_atlas = Vector2i(3, 3)
@@ -1581,7 +1581,7 @@ texture = ExtResource("5_y7cus")
 12:43/0/metadata/_better_terrain = {
 0: [10],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
 12: [10],
 &"type": 10
@@ -1597,9 +1597,9 @@ texture = ExtResource("5_y7cus")
 12:40/0/metadata/_better_terrain = {
 0: [10],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -1615,7 +1615,7 @@ texture = ExtResource("5_y7cus")
 0: [10],
 4: [10],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -1629,9 +1629,9 @@ texture = ExtResource("5_y7cus")
 12:34/0 = 0
 12:34/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
-8: [12],
-12: [12],
+4: [14],
+8: [14],
+12: [14],
 &"type": 10
 }
 12:31/size_in_atlas = Vector2i(3, 3)
@@ -1644,8 +1644,8 @@ texture = ExtResource("5_y7cus")
 12:31/0 = 0
 12:31/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
-8: [12],
+4: [14],
+8: [14],
 12: [10],
 &"type": 10
 }
@@ -1659,7 +1659,7 @@ texture = ExtResource("5_y7cus")
 12:28/0 = 0
 12:28/0/metadata/_better_terrain = {
 4: [10],
-8: [12],
+8: [14],
 12: [10],
 &"type": 10
 }
@@ -1674,8 +1674,8 @@ texture = ExtResource("5_y7cus")
 12:25/0/metadata/_better_terrain = {
 0: [10],
 4: [10],
-8: [12],
-12: [12],
+8: [14],
+12: [14],
 &"type": 10
 }
 24:25/size_in_atlas = Vector2i(3, 3)
@@ -1690,7 +1690,7 @@ texture = ExtResource("5_y7cus")
 0: [10],
 4: [10],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 24:28/size_in_atlas = Vector2i(3, 3)
@@ -1712,7 +1712,7 @@ texture = ExtResource("5_y7cus")
 24:31/0 = 0
 24:31/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
+4: [14],
 8: [10],
 12: [10],
 &"type": 10
@@ -1727,9 +1727,9 @@ texture = ExtResource("5_y7cus")
 24:34/0 = 0
 24:34/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
+4: [14],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 24:37/size_in_atlas = Vector2i(3, 3)
@@ -1744,9 +1744,9 @@ texture = ExtResource("5_y7cus")
 0: [10],
 4: [10],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 24:40/size_in_atlas = Vector2i(3, 3)
@@ -1759,13 +1759,13 @@ texture = ExtResource("5_y7cus")
 24:40/0 = 0
 24:40/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 24:43/size_in_atlas = Vector2i(3, 3)
@@ -1778,9 +1778,9 @@ texture = ExtResource("5_y7cus")
 24:43/0 = 0
 24:43/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
 12: [10],
 &"type": 10
@@ -1795,11 +1795,11 @@ texture = ExtResource("5_y7cus")
 24:46/0 = 0
 24:46/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
 7: [10],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 24:49/size_in_atlas = Vector2i(3, 3)
@@ -1814,11 +1814,11 @@ texture = ExtResource("5_y7cus")
 24:52/0 = 0
 24:52/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
+4: [14],
 8: [10],
 11: [10],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 24:55/size_in_atlas = Vector2i(3, 3)
@@ -1831,9 +1831,9 @@ texture = ExtResource("5_y7cus")
 24:55/0 = 0
 24:55/0/metadata/_better_terrain = {
 0: [10],
-4: [12],
+4: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 15: [10],
 &"type": 10
@@ -1847,10 +1847,10 @@ texture = ExtResource("5_y7cus")
 36:25/animation_frame_3/duration = 1.0
 36:25/0 = 0
 36:25/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 36:28/size_in_atlas = Vector2i(3, 3)
@@ -1862,7 +1862,7 @@ texture = ExtResource("5_y7cus")
 36:28/animation_frame_3/duration = 1.0
 36:28/0 = 0
 36:28/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
 12: [10],
 &"type": 10
@@ -1876,8 +1876,8 @@ texture = ExtResource("5_y7cus")
 36:31/animation_frame_3/duration = 1.0
 36:31/0 = 0
 36:31/0/metadata/_better_terrain = {
-0: [12],
-4: [12],
+0: [14],
+4: [14],
 8: [10],
 12: [10],
 &"type": 10
@@ -1891,10 +1891,10 @@ texture = ExtResource("5_y7cus")
 36:34/animation_frame_3/duration = 1.0
 36:34/0 = 0
 36:34/0/metadata/_better_terrain = {
-0: [12],
-4: [12],
+0: [14],
+4: [14],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 36:37/size_in_atlas = Vector2i(3, 3)
@@ -1910,7 +1910,7 @@ texture = ExtResource("5_y7cus")
 4: [10],
 8: [10],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 36:40/size_in_atlas = Vector2i(3, 3)
@@ -1923,11 +1923,11 @@ texture = ExtResource("5_y7cus")
 36:40/0 = 0
 36:40/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
 8: [10],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
 }
 36:43/size_in_atlas = Vector2i(3, 3)
@@ -1940,7 +1940,7 @@ texture = ExtResource("5_y7cus")
 36:43/0 = 0
 36:43/0/metadata/_better_terrain = {
 0: [10],
-3: [12],
+3: [14],
 4: [10],
 8: [10],
 12: [10],
@@ -1955,11 +1955,11 @@ texture = ExtResource("5_y7cus")
 36:46/animation_frame_3/duration = 1.0
 36:46/0 = 0
 36:46/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 36:49/size_in_atlas = Vector2i(3, 3)
@@ -1971,9 +1971,9 @@ texture = ExtResource("5_y7cus")
 36:49/animation_frame_3/duration = 1.0
 36:49/0 = 0
 36:49/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
 11: [10],
 12: [10],
@@ -1988,10 +1988,10 @@ texture = ExtResource("5_y7cus")
 36:52/animation_frame_3/duration = 1.0
 36:52/0 = 0
 36:52/0/metadata/_better_terrain = {
-0: [12],
-4: [12],
+0: [14],
+4: [14],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -2004,11 +2004,11 @@ texture = ExtResource("5_y7cus")
 36:55/animation_frame_3/duration = 1.0
 36:55/0 = 0
 36:55/0/metadata/_better_terrain = {
-0: [12],
+0: [14],
 4: [10],
 7: [10],
 8: [10],
-11: [12],
+11: [14],
 12: [10],
 &"type": 10
 }
@@ -2024,9 +2024,9 @@ texture = ExtResource("5_y7cus")
 0: [10],
 3: [10],
 4: [10],
-7: [12],
+7: [14],
 8: [10],
-12: [12],
+12: [14],
 &"type": 10
 }
 24:58/size_in_atlas = Vector2i(3, 3)
@@ -2041,10 +2041,29 @@ texture = ExtResource("5_y7cus")
 0: [10],
 3: [10],
 4: [10],
-8: [12],
+8: [14],
 12: [10],
-15: [12],
+15: [14],
 &"type": 10
+}
+17:2/0 = 0
+18:2/0 = 0
+19:2/0 = 0
+20:2/0 = 0
+21:2/0 = 0
+17:3/0 = 0
+18:3/0 = 0
+19:3/0 = 0
+17:4/0 = 0
+18:4/0 = 0
+19:4/0 = 0
+20:4/0 = 0
+21:4/0 = 0
+20:3/0 = 0
+21:3/0 = 0
+0:5/0 = 0
+0:5/0/metadata/_better_terrain = {
+&"type": 12
 }
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_kp23o"]
@@ -2065,6 +2084,7 @@ shader_parameter/waterNoise = SubResource("NoiseTexture2D_ftsea")
 shader_parameter/waterDistortionNoise = SubResource("NoiseTexture2D_5jirj")
 shader_parameter/waterColor = Color(5.390644e-06, 0.8657465, 0.94396335, 1)
 shader_parameter/colorCorection = 0.5999999865888
+shader_parameter/depth = 0.0
 shader_parameter/distortionForce = 0.0250000011875
 shader_parameter/WDBrightness = 0.85000001266602
 shader_parameter/WDFreq = 0.6
@@ -2080,11 +2100,7 @@ texture = ExtResource("6_wg16f")
 0:0/0 = 0
 0:0/0/material = SubResource("ShaderMaterial_vaxfo")
 0:0/0/metadata/_better_terrain = {
-0: [2],
-4: [2],
-8: [2],
-12: [2],
-"type": 2
+&"type": 2
 }
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_uyinl"]
@@ -2092,6 +2108,43 @@ texture = ExtResource("9_ftsea")
 0:0/0 = 0
 0:0/0/metadata/_better_terrain = {
 &"type": 11
+}
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ftsea"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_otnwt"]
+noise = SubResource("FastNoiseLite_ftsea")
+seamless = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_3xj4h"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5v6r0"]
+noise = SubResource("FastNoiseLite_3xj4h")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uyinl"]
+shader = ExtResource("6_kp23o")
+shader_parameter/waterNoise = SubResource("NoiseTexture2D_5v6r0")
+shader_parameter/waterDistortionNoise = SubResource("NoiseTexture2D_otnwt")
+shader_parameter/waterColor = Color(5.198121e-06, 0.7805998, 0.852938, 1)
+shader_parameter/colorCorection = 0.5999999865888
+shader_parameter/depth = 0.0
+shader_parameter/distortionForce = 0.0250000011875
+shader_parameter/WDBrightness = 0.85000001266602
+shader_parameter/WDFreq = 0.6
+shader_parameter/WDSize = 1.0500000305474
+shader_parameter/WDSpeed = 15.60000021755752
+shader_parameter/tiling = Vector2(1, 1)
+shader_parameter/offSetSpeed = Vector2(0.1, 0.1)
+shader_parameter/backGroundDirX = 0.0030000034023799915
+shader_parameter/backGroundDirY = 0.0030000034023799915
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vaxfo"]
+texture = ExtResource("6_wg16f")
+0:0/0 = 0
+0:0/0/material = SubResource("ShaderMaterial_uyinl")
+0:0/0/metadata/_better_terrain = {
+&"type": 13
 }
 
 [sub_resource type="TileSet" id="TileSet_u221f"]
@@ -2103,6 +2156,7 @@ terrain_set_0/terrain_1/color = Color(1, 0.439216, 0.25098, 1)
 sources/0 = SubResource("TileSetAtlasSource_nv2ed")
 sources/1 = SubResource("TileSetAtlasSource_cmdg5")
 sources/2 = SubResource("TileSetAtlasSource_uyinl")
+sources/3 = SubResource("TileSetAtlasSource_vaxfo")
 metadata/_better_terrain = {
 "decoration": ["Decoration", Color(0.411765, 0.411765, 0.411765, 1), 3, [], {
 "path": "res://addons/better-terrain/icons/Decoration.svg"
@@ -2110,7 +2164,7 @@ metadata/_better_terrain = {
 "terrains": [["Grass", Color(0.191195, 0.225004, 0.732146, 1), 0, [], {
 "coord": Vector2i(9, 2),
 "source_id": 0
-}], ["Sand", Color(1, 0, 0, 1), 0, [12], {
+}], ["Sand", Color(1, 0, 0, 1), 0, [14], {
 "coord": Vector2i(10, 1),
 "source_id": 0
 }], ["Water", Color(0.959889, 0.562168, 0.832494, 1), 0, [], {
@@ -2123,22 +2177,26 @@ metadata/_better_terrain = {
 }], ["Haunt", Color(0.5736409, 0.4592502, 0.7045563, 1), 0, [], {
 &"coord": Vector2i(14, 3),
 &"source_id": 0
-}], ["Plain", Color(1, 0.6781311, 0.22265625, 1), 0, [12], {
+}], ["Plain", Color(1, 0.6781311, 0.22265625, 1), 0, [14], {
 &"coord": Vector2i(14, 1),
 &"source_id": 0
-}], ["Stone", Color(0.58203125, 0.58203125, 0.58203125, 1), 0, [12], {
+}], ["Stone", Color(0.58203125, 0.58203125, 0.58203125, 1), 0, [14], {
 &"coord": Vector2i(14, 2),
 &"source_id": 0
 }], ["Autumn", Color(0.7903945, 0.17179818, 0.32298905, 1), 0, [], {
 &"coord": Vector2i(14, 4),
 &"source_id": 0
-}], ["MattedGrass", Color(0.94140625, 0.28683472, 0, 1), 0, [12], {
+}], ["MattedGrass", Color(0.94140625, 0.28683472, 0, 1), 0, [14], {
 &"coord": Vector2i(15, 10),
 &"source_id": 0
 }], ["WaterEdge", Color(0.5701464, 0.44961557, 0.65235347, 1), 0, [], {
 &"coord": Vector2i(18, 28),
 &"source_id": 0
 }], ["WaterMask", Color(0.9221802, 1, 0.00390625, 1), 0, [], {
+&"path": ""
+}], ["ObjectTile", Color(0.38219973, 0.6117647, 0.38039213, 1), 0, [], {
+&"path": ""
+}], ["WaterMedium", Color(0.22434998, 0.2265625, 0.14602661, 1), 0, [], {
 &"path": ""
 }], ["GroundTiles", Color(0.0546875, 0, 1, 1), 2, [], {
 &"path": ""
@@ -2198,8 +2256,8 @@ tile_set = SubResource("TileSet_u221f")
 format = 2
 layer_0/name = "UnderWater"
 layer_0/y_sort_origin = -1
+layer_0/z_index = -1
 layer_1/name = "WaterShader"
-layer_1/z_index = 1
 layer_2/name = "Water"
 layer_2/z_index = 2
 layer_3/name = "Ground"
