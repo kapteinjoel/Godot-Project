@@ -102,6 +102,7 @@ func _on_world_button_pressed(file_path: String) -> void:
 	if world_data != null:
 		print("Loaded world: " + world_data.name)
 		# Check if the changed_tiles_by_chunk key exists.
+		print("Seed: " + str(world_data.seed))
 		if world_data.has("changed_tiles_by_chunk"):
 			var saved_data: Dictionary = world_data.changed_tiles_by_chunk
 			var loaded_changed_tiles_by_chunk: Dictionary = {}

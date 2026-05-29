@@ -4,6 +4,8 @@ const RIVER_THRESHOLD = 0.2   # Lower = narrower rivers, raise for wider
 const RIVER_BANK_THRESHOLD = 0.26  # Sandy bank just outside river
 const RIVER_HALF_WIDTH = 4.5    # Changes river tile diameter
 const RIVER_BANK_WIDTH = 1.5    # bank tiles on top of that
+const MIN_TILE_WIDTH_FOR_ISLAND = 17 # The river must be at least this many tiles wide to get an island
+const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/fewer islands
 
 @onready var tilemap: TileMap = $WorldTileMap
 @onready var tilefollower: Sprite2D = $TileFollower
@@ -101,32 +103,32 @@ func _ready() -> void:
 	
 	# World gen settings
 	object_spawn_rng.seed = Global.world_data.seed
-	
-	temperature.seed = Global.world_data.seed # Load in the saved world seed
+	print("World is generating with seed: " + str(Global.world_data.seed))
+	temperature.seed = int(Global.world_data.seed) # Load in the saved world seed
 	temperature.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	temperature.fractal_octaves = 5
 	temperature.frequency = 1.0 / 5000
 	
-	moisture.seed = Global.world_data.seed + 1
+	moisture.seed = int(Global.world_data.seed) + 1
 	moisture.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	moisture.fractal_octaves = 5
 	moisture.frequency = 1.0 / 4500
 	
-	altitude.seed = Global.world_data.seed + 2
+	altitude.seed = int(Global.world_data.seed) + 2
 	altitude.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	altitude.fractal_octaves = 5
 	altitude.frequency = 1.0 / 1200
 	
 	river_noise = FastNoiseLite.new()
 	river_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	river_noise.seed = Global.world_data.seed + 999
+	river_noise.seed = int(Global.world_data.seed) + 999
 	river_noise.frequency = 0.003      # Low frequency = long, continuous rivers
 	river_noise.fractal_type = FastNoiseLite.FRACTAL_FBM
 	river_noise.fractal_octaves = 3
 	
 	river_warp = FastNoiseLite.new()
 	river_warp.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	river_warp.seed = Global.world_data.seed + 1337
+	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
 	if multiplayer.is_server():
@@ -329,7 +331,12 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				generate_ocean(tile_pos, chunk_coords, alt)
 			# === RIVER — checked before beach so it can cut through to ocean ===
 			elif is_river_tile(x, y, alt):
-				generate_river(tile_pos, chunk_coords)
+				if is_river_island_zone(x, y, alt):
+					# Island ground — treat like a sand/beach tile
+						BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
+						# TODO: spawn treasure chest object here with spawn_object()
+				else:
+					generate_river(tile_pos, chunk_coords)
 			elif is_river_bank(x, y, alt):
 				generate_river_bank(tile_pos, chunk_coords)
 			# === BEACH ===
@@ -545,6 +552,94 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	var dy = (get_river_value(x, y + 1) - get_river_value(x, y - 1)) * 0.5
 	var gradient = sqrt(dx * dx + dy * dy)
 	return center / max(gradient, 0.008)
+	
+	
+func is_river_island_zone(x: int, y: int, alt: float) -> bool:
+	# 1. Base check for the current tile
+	if not is_river_tile(x, y, alt):
+		return false
+	var max_scan = 8 # Check up to 15 tiles out
+	# --- HORIZONTAL CHANNEL SCAN ---
+	var left_width = 0
+	for i in range(1, max_scan + 1):
+		# Look up the TRUE altitude of the neighbor tile
+		if is_river_tile(x - i, y, alt):
+			left_width += 1
+		else:
+			break
+	var right_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x + i, y, alt):
+			right_width += 1
+		else:
+			break
+			
+	var horizontal_water_count = left_width + right_width + 1
+	# --- VERTICAL CHANNEL SCAN ---
+	var up_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x, y - i, alt):
+			up_width += 1
+		else:
+			break
+	var down_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x, y + i, alt):
+			down_width += 1
+		else:
+			break
+			
+	var vertical_water_count = up_width + down_width + 1
+
+	# --- DIAGONAL SCAN (top-left to bottom-right) ---
+	var tl_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x - i, y - i, alt):
+			tl_width += 1
+		else:
+			break
+	var br_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x + i, y + i, alt):
+			br_width += 1
+		else:
+			break
+	var diag1_water_count = tl_width + br_width + 1
+
+	# --- DIAGONAL SCAN (top-right to bottom-left) ---
+	var tr_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x + i, y - i, alt):
+			tr_width += 1
+		else:
+			break
+	var bl_width = 0
+	for i in range(1, max_scan + 1):
+		if is_river_tile(x - i, y + i, alt):
+			bl_width += 1
+		else:
+			break
+	var diag2_water_count = tr_width + bl_width + 1
+
+	# Get the true cross-section width (avoids diagonal stretching)
+	var local_width = min(horizontal_water_count, vertical_water_count)
+	
+	if local_width < MIN_TILE_WIDTH_FOR_ISLAND:
+		return false
+	var horizontal_bias = abs(left_width - right_width)
+	var vertical_bias = abs(up_width - down_width)
+	var diag1_bias = abs(tl_width - br_width)
+	var diag2_bias = abs(tr_width - bl_width)
+	var is_centered_horizontally = horizontal_bias < (horizontal_water_count * 0.35)
+	var is_centered_vertically = vertical_bias < (vertical_water_count * 0.35)
+	var is_centered_diag1 = diag1_bias < (diag1_water_count * 0.35)
+	var is_centered_diag2 = diag2_bias < (diag2_water_count * 0.35)
+	# 2. Keep the island confined to the middle of the wide channel
+	if is_centered_horizontally and is_centered_vertically and is_centered_diag1 and is_centered_diag2:
+		var island_shape = moisture.get_noise_2d(x * 0.03, y * 0.03)
+		return true
+		
+	return false
 	
 func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene):
 	# Check if tile is already occupied by an object or floor decor
