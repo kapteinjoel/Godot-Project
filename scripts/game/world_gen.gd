@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 8 # How many chunks to render around the player
+@export var view_distance := 6 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -36,6 +36,8 @@ var object_spawn_rng = RandomNumberGenerator.new()
 
 var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
+var dirty_chunks := {}  # tracks which chunks need saving
+var chunks_with_saved_data := {}  # populated on world load
 
 # The tilemap layer for the player to edit tiles at
 var players_layer_index := 0
@@ -47,6 +49,8 @@ var reserved_tiles: Dictionary = {}
 # Tilemap layers
 enum Layers { STONE = -10, SAND = -9, GRASS = -8, UNDERWATER = -7, WATERSHADER = -6, WATER = -5, GROUND = -4, FLOOR = -3, FLOOR_DECOR = -2,  COLLISION = -1 }
 # Tiles/Terrains used in chunk generation
+enum LayersToUpdate { GROUND = -4, FLOOR = -3, COLLISION = -1 }
+
 enum Terrain { 
 	GRASS = 0, 
 	SAND = 1, 
@@ -164,6 +168,8 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
+	load_saved_chunk_index() 
+	
 	if multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -190,78 +196,99 @@ func _input(event):
 		change_tile_at_follower(hovered_tile, players_layer_index, Terrain.SAND)
 		
 func _on_save_timer_timeout() -> void:
-	# Define paths for the main save file and a temporary one
-	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
-	var file_path = "user://worlds/" + world_name_lower + ".json"
-	var temp_file_path = "user://worlds/" + world_name_lower + ".json.tmp"
-
-	# --- Read existing data ---
-	if not FileAccess.file_exists(file_path):
-		print("Save file doesn't exist yet. Skipping read.")
-		return # Or create a new default world_data dict here
-
-	var file = FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		print("Error: Could not open world file for reading: %s" % file_path)
-		return
-
-	var file_content = file.get_as_text()
-	file.close()
-
-	var world_data = JSON.parse_string(file_content)
-	if world_data == null:
-		print("Error: Could not parse world data from file.")
-		return
-	
-	# --- Prepare new data ---
-	var serializable_changed_tiles := {}
-	for chunk_coords in changed_tiles_by_chunk.keys():
-		var chunk_key = str(chunk_coords)
-		serializable_changed_tiles[chunk_key] = {}
-		for tile_coords in changed_tiles_by_chunk[chunk_coords].keys():
-			var tile_key = str(tile_coords)
-			serializable_changed_tiles[chunk_key][tile_key] = changed_tiles_by_chunk[chunk_coords][tile_coords]
-			
-	world_data["changed_tiles_by_chunk"] = serializable_changed_tiles.duplicate(true)
-
-	# --- Write new data to the temp file ---
-	var temp_file = FileAccess.open(temp_file_path, FileAccess.WRITE)
-	if temp_file == null:
-		print("Error: Could not open temporary save file for writing: %s" % temp_file_path)
-		return
-		
-	temp_file.store_string(JSON.stringify(world_data, "\t"))
-	temp_file.close()
-	
-	# --- Use temp file to replace the old save with the new one ---
-	var err = DirAccess.rename_absolute(temp_file_path, file_path)
-	if err != OK:
-		print("Error: Failed to rename temp file, save failed!")
+	for chunk_coords in dirty_chunks.keys():
+		save_chunk_changes(chunk_coords)
+	dirty_chunks.clear()
 	
 func change_tile_at_follower(tile_coords: Vector2i, layer_index: int, terrain_type: int):
-	#minimap.open_full_map()
-	var chunk_coords = get_chunk_coords(tile_coords)	
+	var chunk_coords = get_chunk_coords(tile_coords)
 	if not changed_tiles_by_chunk.has(chunk_coords):
 		changed_tiles_by_chunk[chunk_coords] = {}
-	
-	# Create a dictionary to hold both the terrain type and layer index
-	var tile_data = {
+
+	changed_tiles_by_chunk[chunk_coords][tile_coords] = {
 		"terrain_type": terrain_type,
-		"layer_index": layer_index  # Save the current layer index
+		"layer_index": layer_index
 	}
-	
-	changed_tiles_by_chunk[chunk_coords][tile_coords] = tile_data
-	
+
+	dirty_chunks[chunk_coords] = true  # mark dirty, don't write yet
+
 	if generated_chunks.has(chunk_coords):
 		generated_chunks.erase(chunk_coords)
 	if chunk_containers.has(chunk_coords):
 		var container = chunk_containers[chunk_coords]
-		container.queue_free() # Deletes the container and all objects inside it
-		chunk_containers.erase(chunk_coords) # Remove from dictionary
+		container.queue_free()
+		chunk_containers.erase(chunk_coords)
 		clear_chunk_object_tiles(chunk_coords)
 	
 func get_player_tile_coords() -> Vector2i:
 	return tilemap.local_to_map(player.global_position)
+	
+func get_chunk_file_path(chunk_coords: Vector2i) -> String:
+	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
+	return "user://worlds/" + world_name_lower + "/chunks/" + str(chunk_coords.x) + "_" + str(chunk_coords.y) + ".json"
+	
+func load_saved_chunk_index() -> void:
+	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
+	var chunks_dir = "user://worlds/" + world_name_lower + "/chunks/"
+	var dir = DirAccess.open(chunks_dir)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".json"):
+			var parts = file_name.trim_suffix(".json").split("_")
+			if parts.size() == 2:
+				var coords = Vector2i(int(parts[0]), int(parts[1]))
+				chunks_with_saved_data[coords] = true
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+func save_chunk_changes(chunk_coords: Vector2i) -> void:
+	if not changed_tiles_by_chunk.has(chunk_coords):
+		return
+	chunks_with_saved_data[chunk_coords] = true
+	var file_path = get_chunk_file_path(chunk_coords)
+	var temp_path = file_path + ".tmp"
+
+	DirAccess.make_dir_recursive_absolute(file_path.get_base_dir())
+
+	var serializable := {}
+	for tile_coords in changed_tiles_by_chunk[chunk_coords].keys():
+		serializable[str(tile_coords)] = changed_tiles_by_chunk[chunk_coords][tile_coords]
+
+	var temp_file = FileAccess.open(temp_path, FileAccess.WRITE)
+	if temp_file == null:
+		print("Error: Could not write chunk file: ", temp_path)
+		return
+	temp_file.store_string(JSON.stringify(serializable, "\t"))
+	temp_file.close()
+
+	DirAccess.rename_absolute(temp_path, file_path)
+
+func load_chunk_changes(chunk_coords: Vector2i) -> void:
+	if changed_tiles_by_chunk.has(chunk_coords):
+		return
+	if not chunks_with_saved_data.has(chunk_coords):
+		return  # no file exists, skip entirely
+	var file_path = get_chunk_file_path(chunk_coords)
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if parsed == null:
+		return
+	changed_tiles_by_chunk[chunk_coords] = {}
+	for key in parsed.keys():
+		var tile_coords = str_to_vec2i(key)
+		changed_tiles_by_chunk[chunk_coords][tile_coords] = parsed[key]
+
+func str_to_vec2i(s: String) -> Vector2i:
+	var clean = s.strip_edges().trim_prefix("(").trim_suffix(")")
+	var parts = clean.split(",")
+	return Vector2i(int(parts[0].strip_edges()), int(parts[1].strip_edges()))
+
 
 func get_chunk_coords(tile_coords: Vector2i) -> Vector2i:
 	return Vector2i(
@@ -311,6 +338,7 @@ func unload_far_chunks(center_chunk: Vector2i):
 			keys_to_remove.append(chunk)
 	for chunk in keys_to_remove:
 		generated_chunks.erase(chunk)
+		changed_tiles_by_chunk.erase(chunk)
 
 func clear_chunk(chunk_coords: Vector2i):
 	var start_x = chunk_coords.x * chunk_size
@@ -349,6 +377,8 @@ func get_or_create_chunk_container(chunk_coords: Vector2i):
 	return container
 
 func generate_chunk_new(chunk_coords: Vector2i):
+	if chunks_with_saved_data.has(chunk_coords):
+		load_chunk_changes(chunk_coords)
 	var start_x = chunk_coords.x * chunk_size
 	var start_y = chunk_coords.y * chunk_size
 	for x in range(start_x, start_x + chunk_size):
@@ -400,8 +430,8 @@ func generate_chunk_new(chunk_coords: Vector2i):
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
 
 	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
-	for layer in Layers.keys():
-		BetterTerrain.update_terrain_area(tilemap, Layers[layer], update_area)
+	for layer in LayersToUpdate.keys():
+		BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
 		
 	# After All generation is done reload past mobs
 	get_node("MobManager").load_mobs_for_chunk(chunk_coords)
