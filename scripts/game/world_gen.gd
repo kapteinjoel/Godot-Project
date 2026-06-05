@@ -38,7 +38,7 @@ var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
 
 # The tilemap layer for the player to edit tiles at
-var layer_index := 0
+var players_layer_index := 0
 
 # Used to store tiles changed by the player by their chunk
 var changed_tiles_by_chunk : Dictionary = {}
@@ -187,7 +187,7 @@ func _enter_tree() -> void:
 func _input(event):
 	if event.is_action_pressed("change_tile"):
 		var hovered_tile = tilefollower.get_hovered_tile_coords()
-		change_tile_at_follower(hovered_tile, Terrain.SAND)
+		change_tile_at_follower(hovered_tile, players_layer_index, Terrain.SAND)
 		
 func _on_save_timer_timeout() -> void:
 	# Define paths for the main save file and a temporary one
@@ -238,7 +238,7 @@ func _on_save_timer_timeout() -> void:
 	if err != OK:
 		print("Error: Failed to rename temp file, save failed!")
 	
-func change_tile_at_follower(tile_coords: Vector2i, terrain_type: int):
+func change_tile_at_follower(tile_coords: Vector2i, layer_index: int, terrain_type: int):
 	#minimap.open_full_map()
 	var chunk_coords = get_chunk_coords(tile_coords)	
 	if not changed_tiles_by_chunk.has(chunk_coords):
@@ -396,7 +396,7 @@ func generate_chunk_new(chunk_coords: Vector2i):
 	for tile_pos in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[tile_pos]
 		var terrain_type = tile_data.get("terrain_type", Terrain.GRASS)
-		var saved_layer_index = tile_data.get("layer_index", layer_index)
+		var saved_layer_index = tile_data.get("layer_index", players_layer_index)
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
 
 	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
@@ -622,7 +622,7 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 		var tile_pos = origin + entry[0]
 		var layer = entry[1]
 		var dterrain = entry[2]
-		BetterTerrain.set_cell(tilemap, layer, tile_pos, dterrain)
+		change_tile_at_follower(tile_pos, layer, dterrain)
 		reserved_tiles[tile_pos] = true
 	print("made a house")
 	return true
