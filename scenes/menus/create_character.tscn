@@ -606,7 +606,7 @@ zoom = Vector2(2, 2)
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="LineEdit" type="LineEdit" parent="CenterContainer/VBoxContainer/BottomButtons"]
+[node name="CharacterName" type="LineEdit" parent="CenterContainer/VBoxContainer/BottomButtons"]
 custom_minimum_size = Vector2(75, 20)
 layout_mode = 2
 size_flags_horizontal = 4

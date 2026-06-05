@@ -27,22 +27,25 @@ var moisture := FastNoiseLite.new()
 var altitude := FastNoiseLite.new()
 var river_noise: FastNoiseLite  # Primary river path noise
 var river_warp: FastNoiseLite   # Domain warping for snaking effect
+var original_cats: Array = []
 var varieties = null
 var random_type = null
+var ts = null
+var terrain = null
 var object_spawn_rng = RandomNumberGenerator.new()
 
 var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
 
 # The tilemap layer for the player to edit tiles at
-var layer_index := 3
+var layer_index := 0
 
 # Used to store tiles changed by the player by their chunk
-var changed_tiles_by_chunk := {}
+var changed_tiles_by_chunk : Dictionary = {}
+var reserved_tiles: Dictionary = {}
 
 # Tilemap layers
-enum Layers { UNDERWATER = 0, WATERSHADER = 1, WATER = 2, GROUND = 3, FLOOR = 4, FLOOR_DECOR = 5,  COLLISION = 6 }
-
+enum Layers { STONE = -10, SAND = -9, GRASS = -8, UNDERWATER = -7, WATERSHADER = -6, WATER = -5, GROUND = -4, FLOOR = -3, FLOOR_DECOR = -2,  COLLISION = -1 }
 # Tiles/Terrains used in chunk generation
 enum Terrain { 
 	GRASS = 0, 
@@ -58,7 +61,8 @@ enum Terrain {
 	WATER_EDGE = 10,
 	WATER_MASK = 11,
 	OBJECT_TILE = 12,
-	WATER_MEDIUM = 13
+	WATER_MEDIUM = 13,
+	WOOD_FLOOR = 14
 	}
 
 # Decoration tiles that cannot be interacted with, used as an overlay
@@ -68,6 +72,11 @@ var DECORATIONS = {
 	"forest_flower_white_3": Vector2i(19, 0),
 	"forest_flower_white_4": Vector2i(20, 0),
 	"forest_flower_white_5": Vector2i(21, 0),
+	"bank_grass_1": Vector2i(22, 0),
+	"bank_grass_2": Vector2i(23, 0),
+	"bank_grass_3": Vector2i(24, 0),
+	"bank_grass_4": Vector2i(25, 0),
+	"bank_grass_5": Vector2i(26, 0),
 	"forest_ground_grass_1": Vector2i(17, 1),
 	"forest_ground_grass_2": Vector2i(18, 1),
 	"forest_ground_grass_3": Vector2i(19, 1),
@@ -90,9 +99,33 @@ var DECORATIONS = {
 	"forest_flower_red_5": Vector2i(21, 4),
 }
 
+const HOUSE_1 = [
+	[Vector2i(0,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(1,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(2,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(3,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(4,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(5,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(6,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(0,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(1,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(2,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(3,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(4,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(5,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(6,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	
+	#[Vector2i(0,0), Layers.COLLISION, Terrain.WOOD_WALL],
+]
+
 func _ready() -> void:
 	set_process(false)
 	randomize()
+	
+	#ts = tilemap.tile_set
+	#terrain = BetterTerrain.get_terrain(ts, Terrain.SAND)
+	#original_cats = terrain.categories.duplicate()
+	
 	# Load in tiles changed by the player
 	if Global.world_data.has("changed_tiles_by_chunk"):
 		changed_tiles_by_chunk = Global.world_data.changed_tiles_by_chunk
@@ -137,10 +170,10 @@ func _ready() -> void:
 		$SaveTimer.timeout.connect(_on_save_timer_timeout) # Start timer to save world data
 		# Spawn the host (you)
 		player = spawn_player(1)
+		player.change_skin_color(Global.character_data.skin_color)
 		mob_manager.set_process(true)
 		set_process(true)
 		
-
 func _process(_delta: float) -> void:
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
@@ -331,28 +364,28 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				generate_ocean(tile_pos, chunk_coords, alt)
 			# === RIVER — checked before beach so it can cut through to ocean ===
 			elif is_river_tile(x, y, alt):
-				if is_river_island_zone(x, y, alt):
-					# Island ground — treat like a sand/beach tile
-						BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
-						# TODO: spawn treasure chest object here with spawn_object()
-				else:
-					generate_river(tile_pos, chunk_coords)
+				generate_river(tile_pos, chunk_coords)
 			elif is_river_bank(x, y, alt):
 				generate_river_bank(tile_pos, chunk_coords)
 			# === BEACH ===
 			elif between(alt, 0.2, 0.25):
-				BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
+				#BetterTerrain.set_terrain(ts, Terrain.SAND, terrain.name, terrain.color, terrain.type, [])
+				BetterTerrain.set_cell(tilemap, Layers.SAND , tile_pos, Terrain.SAND)
+				BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
 			# === LAND ZONE ===
 			elif between(alt, 0.25, 0.8):
 				var is_plains = between(moist, 0, 0.4) and between(temp, 0.2, 0.6)
 				var is_autumn = between(moist, 0.4, 0.9) and (temp > 0.6)
 				var is_desert = temp > 0.7 and moist < 0.4
 				if is_plains:
-					BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.PLAIN)
+					pass
+					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.PLAIN)
 				elif is_autumn:
-					BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.AUTUMM)
+					pass
+					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.AUTUMM)
 				elif is_desert:
-					BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.STONE)
+					pass
+					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.STONE)
 				else:
 					generate_forest(tile_pos, chunk_coords)
 			# === HIGH ALTITUDE FOREST ===
@@ -378,7 +411,7 @@ func between(val, start, end):
 		return true
 
 func generate_ocean(tile_pos, chunk_coords: Vector2i, alt):
-	BetterTerrain.set_cell(tilemap, Layers.UNDERWATER, tile_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
 	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
 	BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
 	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
@@ -389,32 +422,35 @@ func generate_ocean(tile_pos, chunk_coords: Vector2i, alt):
 		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
 	
 func generate_river_bank(tile_pos, chunk_coords: Vector2i):
-	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
-	
-	# Noise determines if this bank tile is in a rock clump zone
-	var rock_noise = altitude.get_noise_2d(tile_pos.x * 15.0, tile_pos.y * 15.0)
-	var in_clump = between(rock_noise, 0.1, 0.18) or between(rock_noise, 0.5, 0.58)
-	if not in_clump:
-		return
-	
-	# Only spawn rocks near the water's edge, not deep into the bank
+	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
+
 	var river_dist = get_tiles_from_river_center(tile_pos.x, tile_pos.y)
 	var bank_edge_threshold = RIVER_HALF_WIDTH + 3.0
-	if river_dist > bank_edge_threshold:
+
+	# --- Rocks ---
+	var rock_noise = altitude.get_noise_2d(tile_pos.x * 15.0, tile_pos.y * 15.0)
+	var in_rock_clump = between(rock_noise, 0.1, 0.18) or between(rock_noise, 0.5, 0.58)
+	if in_rock_clump and river_dist <= bank_edge_threshold:
+		var rock = spawn_object(tile_pos, chunk_coords, placeable)
+		var rock_types = [
+			rock.OBJECT_TYPE.RIVER_ROCK_1,
+			rock.OBJECT_TYPE.RIVER_ROCK_2,
+			rock.OBJECT_TYPE.RIVER_ROCK_3,
+			rock.OBJECT_TYPE.RIVER_ROCK_4,
+		]
+		rock.object_type = rock_types[object_spawn_rng.randi() % rock_types.size()]
 		return
-	
-	# Spawn and randomly assign one of the four rock types
-	var rock = spawn_object(tile_pos, chunk_coords, placeable)
-	var rock_types = [
-		rock.OBJECT_TYPE.RIVER_ROCK_1,
-		rock.OBJECT_TYPE.RIVER_ROCK_2,
-		rock.OBJECT_TYPE.RIVER_ROCK_3,
-		rock.OBJECT_TYPE.RIVER_ROCK_4,
-	]
-	rock.object_type = rock_types[object_spawn_rng.randi() % rock_types.size()]
+
+	# --- Grass ---
+	var grass_noise = altitude.get_noise_2d(tile_pos.x * 20.0 + 500.0, tile_pos.y * 20.0 + 500.0)
+	var in_grass_clump = between(grass_noise, 0.05, 0.10)
+	if in_grass_clump:
+		varieties = ["bank_grass_1", "bank_grass_2", "bank_grass_3", "bank_grass_4", "bank_grass_5"]
+		tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
 	
 func generate_river(tile_pos, chunk_coords: Vector2i):
-	BetterTerrain.set_cell(tilemap, Layers.UNDERWATER, tile_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
 	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
 	BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
 	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
@@ -438,13 +474,14 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 	var roll = object_spawn_rng.randf()
 			
 	if detail_noise < -0.6 and density < -0.3: # PONDS
-		BetterTerrain.set_cell(tilemap, Layers.UNDERWATER, tile_pos, Terrain.SAND)
+		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
 		BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
 		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
 
 	elif between(detail_noise, -1.0, -0.5) and density < -0.25: # SAND / POND BORDERS
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.SAND)
+		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
 		if between(detail_noise, -0.7, -0.57):
 			if between(roll, 0.2, 0.9):
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
@@ -464,7 +501,8 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 				new_plant.set_plant_type(varieties[object_spawn_rng.randi() % varieties.size()])
 
 	elif between(detail_noise, 0.1, 0.3): # MATTED GRASS
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
 		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 			varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
@@ -479,16 +517,26 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 			new_tree.set_tree_type(new_tree.TREE_TYPE.PINE_LARGE_2)
 
 	elif between(detail_noise, 0.6, 0.7): # STONE MICRO BIOME
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.STONE)
-		if between(detail_noise, 0.6, 0.63):
-			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
-		if object_spawn_rng.randf() > 0.95:
-			var rock = spawn_object(tile_pos, chunk_coords, placeable)
-			rock.object_type = rock.OBJECT_TYPE.ROCK_1
+			BetterTerrain.set_cell(tilemap, Layers.STONE, tile_pos, Terrain.STONE)
+			BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
+			if between(detail_noise, 0.6, 0.63):
+				varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
+				tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+			if object_spawn_rng.randf() > 0.95:
+				var container = spawn_object(tile_pos, chunk_coords, placeable)
+				var container_types = [container.OBJECT_TYPE.BARREL_1, container.OBJECT_TYPE.CRATE_1]
+				container.object_type = container_types[object_spawn_rng.randi() % container_types.size()]
 	else: # FOREST
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.OBJECT_TILE)
+		
+		#TESTING UNCOMMENT LATER vvvvvvvvv
 		BetterTerrain.set_cell(tilemap, Layers.FLOOR, tile_pos, Terrain.GRASS)
+		if is_reserved(tile_pos):
+			return
+		if roll < 0.005 and between(detail_noise, -0.1, 0.1):
+			if stamp_house(tile_pos, HOUSE_1):
+				return
 		# DECORATION FLOWERS
 		if between(secondary_detail_noise, 0.0, 0.05):
 			varieties = ["forest_flower_white_1", "forest_flower_white_2", "forest_flower_white_3", "forest_flower_white_4", "forest_flower_white_5"]
@@ -553,94 +601,6 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	var gradient = sqrt(dx * dx + dy * dy)
 	return center / max(gradient, 0.008)
 	
-	
-func is_river_island_zone(x: int, y: int, alt: float) -> bool:
-	# 1. Base check for the current tile
-	if not is_river_tile(x, y, alt):
-		return false
-	var max_scan = 8 # Check up to 15 tiles out
-	# --- HORIZONTAL CHANNEL SCAN ---
-	var left_width = 0
-	for i in range(1, max_scan + 1):
-		# Look up the TRUE altitude of the neighbor tile
-		if is_river_tile(x - i, y, alt):
-			left_width += 1
-		else:
-			break
-	var right_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x + i, y, alt):
-			right_width += 1
-		else:
-			break
-			
-	var horizontal_water_count = left_width + right_width + 1
-	# --- VERTICAL CHANNEL SCAN ---
-	var up_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x, y - i, alt):
-			up_width += 1
-		else:
-			break
-	var down_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x, y + i, alt):
-			down_width += 1
-		else:
-			break
-			
-	var vertical_water_count = up_width + down_width + 1
-
-	# --- DIAGONAL SCAN (top-left to bottom-right) ---
-	var tl_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x - i, y - i, alt):
-			tl_width += 1
-		else:
-			break
-	var br_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x + i, y + i, alt):
-			br_width += 1
-		else:
-			break
-	var diag1_water_count = tl_width + br_width + 1
-
-	# --- DIAGONAL SCAN (top-right to bottom-left) ---
-	var tr_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x + i, y - i, alt):
-			tr_width += 1
-		else:
-			break
-	var bl_width = 0
-	for i in range(1, max_scan + 1):
-		if is_river_tile(x - i, y + i, alt):
-			bl_width += 1
-		else:
-			break
-	var diag2_water_count = tr_width + bl_width + 1
-
-	# Get the true cross-section width (avoids diagonal stretching)
-	var local_width = min(horizontal_water_count, vertical_water_count)
-	
-	if local_width < MIN_TILE_WIDTH_FOR_ISLAND:
-		return false
-	var horizontal_bias = abs(left_width - right_width)
-	var vertical_bias = abs(up_width - down_width)
-	var diag1_bias = abs(tl_width - br_width)
-	var diag2_bias = abs(tr_width - bl_width)
-	var is_centered_horizontally = horizontal_bias < (horizontal_water_count * 0.35)
-	var is_centered_vertically = vertical_bias < (vertical_water_count * 0.35)
-	var is_centered_diag1 = diag1_bias < (diag1_water_count * 0.35)
-	var is_centered_diag2 = diag2_bias < (diag2_water_count * 0.35)
-	# 2. Keep the island confined to the middle of the wide channel
-	if is_centered_horizontally and is_centered_vertically and is_centered_diag1 and is_centered_diag2:
-		var island_shape = moisture.get_noise_2d(x * 0.03, y * 0.03)
-		return true
-		
-	return false
-	
 func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene):
 	# Check if tile is already occupied by an object or floor decor
 	if BetterTerrain.get_cell(tilemap, Layers.COLLISION, tile_pos) == Terrain.OBJECT_TILE:
@@ -656,7 +616,17 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	BetterTerrain.set_cell(tilemap, Layers.COLLISION, tile_pos, Terrain.OBJECT_TILE)
 	
 	return instance
-	
+
+func stamp_house(origin: Vector2i, blueprint: Array):
+	for entry in blueprint:
+		var tile_pos = origin + entry[0]
+		var layer = entry[1]
+		var dterrain = entry[2]
+		BetterTerrain.set_cell(tilemap, layer, tile_pos, dterrain)
+		reserved_tiles[tile_pos] = true
+	print("made a house")
+	return true
+
 func wants_to_be_tree(tile_pos: Vector2i) -> bool:
 	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
 	var rng = RandomNumberGenerator.new()
@@ -685,6 +655,9 @@ func is_suppressed_by_nearby_tree(tile_pos: Vector2i, min_distance: int) -> bool
 				if neighbor_priority > my_priority:
 					return true
 	return false
+
+func is_reserved(tile_pos: Vector2i) -> bool:
+	return reserved_tiles.has(tile_pos)
 
 # MULTIPLAYER STUFF
 @rpc("authority", "call_remote", "reliable")

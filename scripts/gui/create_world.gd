@@ -4,6 +4,7 @@ extends Control
 @onready var seed_text_edit = $CenterContainer/VBoxContainer/WorldSeed/Seed
 @onready var difficulty_group = $CenterContainer/VBoxContainer/WorldDifficulty
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	print(OS.get_user_data_dir())

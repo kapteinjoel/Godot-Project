@@ -116,8 +116,24 @@ func _ready():
 	eye_dart_timer.timeout.connect(_on_eye_dart_timer_timeout)
 	run_animation_timer.timeout.connect(_on_animation_timer_timeout)
 	run_animation_timer_legs.timeout.connect(_on_leg_animation_timer_timeout)
+	
+
+	if Global.character_data.has("skin_color"):
+		change_skin_color(Color(Global.character_data.skin_color))
+		print(Global.character_data.skin_color)
+	if Global.character_data.has("hair_color"):
+		change_hair_color(Color(Global.character_data.hair_color))
+		print(Global.character_data.hair_color)
+	if Global.character_data.has("eye_color"):
+		change_eye_color(Color(Global.character_data.eye_color))
+		print(Global.character_data.eye_color)
 
 	_on_eye_dart_timer_timeout()
+	
+func dict_to_color(d) -> Color:
+	if d is Color:
+		return d  # already a Color, no conversion needed
+	return Color(d["r"], d["g"], d["b"], d.get("a", 1.0))
 	
 func _process(_delta):
 	if not is_multiplayer_authority():
@@ -260,6 +276,7 @@ func _sync_reflection():
 			#print(child.frame)
 			mirror.flip_h = child.flip_h
 			mirror.rotation = child.rotation
+			mirror.modulate = child.modulate 
 		
 func change_eyes(expression: String):
 	if EYE_REGIONS.has(expression):

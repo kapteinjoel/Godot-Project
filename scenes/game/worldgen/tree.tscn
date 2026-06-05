@@ -61,6 +61,7 @@ position = Vector2(0, -27)
 texture = SubResource("AtlasTexture_2hx86")
 
 [node name="TreeReflection" type="Sprite2D" parent="Tree"]
+visible = false
 z_index = 1
 z_as_relative = false
 material = SubResource("ShaderMaterial_oc5be")

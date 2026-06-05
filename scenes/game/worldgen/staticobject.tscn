@@ -5,7 +5,7 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vfdns"]
 atlas = ExtResource("1_fpc65")
-region = Rect2(80.004295, 63.918102, 16.018303, 16.170864)
+region = Rect2(95.879715, 79.95092, 16.046394, 15.9422)
 
 [node name="Staticobject" type="Node2D"]
 script = ExtResource("1_vfdns")
