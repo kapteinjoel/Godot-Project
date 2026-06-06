@@ -34,6 +34,7 @@ window/size/mode=4
 window/stretch/mode="viewport"
 window/stretch/scale_mode="integer"
 window/dpi/allow_hidpi=false
+window/vsync/vsync_mode=0
 
 [editor]
 

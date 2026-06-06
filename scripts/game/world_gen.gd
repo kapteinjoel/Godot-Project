@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 8 # How many chunks to render around the player
+@export var view_distance := 7 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -33,11 +33,16 @@ var random_type = null
 var ts = null
 var terrain = null
 var object_spawn_rng = RandomNumberGenerator.new()
+var use_changeset = true
+
 
 var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
 var dirty_chunks := {}  # tracks which chunks need saving
 var chunks_with_saved_data := {}  # populated on world load
+var pending_terrain_updates: Array = []
+var current_change_set = null
+var active_change_sets: Array = []
 
 # The tilemap layer for the player to edit tiles at
 var players_layer_index := 9
@@ -236,9 +241,21 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
+	
 	load_chunks_around(center_chunk)
 	unload_far_chunks(center_chunk)
-	#minimap.update_player_position(get_player_tile_coords())
+	
+	# Loop backward through active sets so we can safely remove them as they finish
+	for i in range(active_change_sets.size() - 1, -1, -1):
+		var change_set = active_change_sets[i]
+		
+		if BetterTerrain.is_terrain_changeset_ready(change_set):
+			BetterTerrain.apply_terrain_changeset(change_set)
+			active_change_sets.remove_at(i) # Clean up this specific thread tracker
+	
+	# Only clear and queue up new updates if ALL previous layer calculations are fully complete
+	if active_change_sets.is_empty():
+		_flush_terrain_updates()
 
 func _enter_tree() -> void:
 	$Players/MultiplayerSpawner.spawned.connect(_on_player_spawned)
@@ -254,6 +271,7 @@ func _on_save_timer_timeout() -> void:
 	dirty_chunks.clear()
 	
 func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_type: int):
+	use_changeset = false
 	var chunk_coords = get_chunk_coords(tile_coords)
 	if not changed_tiles_by_chunk.has(chunk_coords):
 		changed_tiles_by_chunk[chunk_coords] = {}
@@ -301,6 +319,41 @@ func get_chunk_file_path(chunk_coords: Vector2i) -> String:
 	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
 	return "user://worlds/" + world_name_lower + "/chunks/" + str(chunk_coords.x) + "_" + str(chunk_coords.y) + ".json"
 	
+func _flush_terrain_updates():
+	if pending_terrain_updates.is_empty():
+		return
+		
+	var merged: Rect2i = pending_terrain_updates[0]
+	for rect in pending_terrain_updates:
+		merged = merged.merge(rect)
+	pending_terrain_updates.clear()
+	
+	for layer_index in LayersToUpdate.values():
+		var cells_to_update: Dictionary = {}
+		
+		# Godot's range() and Rect2i.end are exclusive, so we use <= to hit the final border tile
+		var x_start = merged.position.x
+		var x_end = merged.end.x
+		var y_start = merged.position.y
+		var y_end = merged.end.y
+		
+		for x in range(x_start, x_end + 1):
+			for y in range(y_start, y_end + 1):
+				var pos = Vector2i(x, y)
+				var cell_type = BetterTerrain.get_cell(tilemap, layer_index, pos)
+				
+				# --- THE FIX ---
+				# Only include the tile in the changeset if it actually contains a terrain type.
+				# If it's -1, skipping it prevents BetterTerrain from trying to autotile into the void.
+				if cell_type != -1:
+					cells_to_update[pos] = cell_type
+		
+		# Only create a changeset if we actually found tiles to update in this layer
+		if not cells_to_update.is_empty():
+			var new_set = BetterTerrain.create_terrain_changeset(tilemap, layer_index, cells_to_update)
+			if new_set != null:
+				active_change_sets.append(new_set)
+		
 func load_saved_chunk_index() -> void:
 	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
 	var chunks_dir = "user://worlds/" + world_name_lower + "/chunks/"
@@ -519,10 +572,19 @@ func generate_chunk_new(chunk_coords: Vector2i):
 		var saved_layer_index = int(tile_data.get("layer_index", players_layer_index))
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
 
-	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
-	for layer in LayersToUpdate.keys():
-		BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
+	#var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 1, chunk_size + 1)
+	#for layer in LayersToUpdate.keys():
+	#	BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
 		
+	#pending_terrain_updates.append(Rect2i(start_x, start_y, chunk_size, chunk_size))
+	if use_changeset:
+		pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
+	else:
+		var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
+		for layer in LayersToUpdate.keys():
+			BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
+		use_changeset = true
+	
 	# load in placed objects
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
@@ -605,13 +667,9 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 	var secondary_detail_noise = altitude.get_noise_2d(tile_pos.x * 50.0, tile_pos.y * 50.0)
 	var density = altitude.get_noise_2d(tile_pos.x * 2.0, tile_pos.y * 2.0)
 	
-	# 1. Use a strict, independent local RNG for the basic spawning roll
-	# This guarantees 'roll' is identical every time regardless of what spawns around it
-	var base_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
-	var tile_rng = RandomNumberGenerator.new()
-	tile_rng.seed = base_seed
-	var roll = tile_rng.randf()
-			
+	var roll = tile_hash(tile_pos, 2)
+	var variety_roll = tile_hash(tile_pos, 3)
+		
 	if detail_noise < -0.6 and density < -0.3: # PONDS
 		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
 		BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
@@ -621,44 +679,35 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 	elif between(detail_noise, -1.0, -0.5) and density < -0.25: # SAND / POND BORDERS
 		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
-		
-		# Create an independent variation seed so choice-picking doesn't break the main loop
-		var var_rng = RandomNumberGenerator.new()
-		var_rng.seed = base_seed + 5555
-		
 		if between(detail_noise, -0.7, -0.57):
 			if between(roll, 0.2, 0.9):
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 				if new_plant != null:
 					varieties = ["forest_pond_reed_1", "forest_pond_reed_2", "forest_pond_reed_3"]
-					new_plant.set_plant_type(varieties[var_rng.randi() % varieties.size()])
+					new_plant.set_plant_type(varieties[int(variety_roll * varieties.size())])
 		elif between(detail_noise, -0.54, -0.52):
 			if roll < 0.5:
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 				if new_plant != null:
 					varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-					new_plant.set_plant_type(varieties[var_rng.randi() % varieties.size()])
+					new_plant.set_plant_type(varieties[int(variety_roll * varieties.size())])
 		elif between(detail_noise, -0.52, -0.5):
 			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[var_rng.randi() % varieties.size()]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
 			if roll < 0.3:
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 				if new_plant != null:
 					varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-					new_plant.set_plant_type(varieties[var_rng.randi() % varieties.size()])
+					new_plant.set_plant_type(varieties[int(tile_hash(tile_pos, 4) * varieties.size())])
 
 	elif between(detail_noise, 0.1, 0.3): # MATTED GRASS
 		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
-		
-		var var_rng = RandomNumberGenerator.new()
-		var_rng.seed = base_seed + 7777
-		
 		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 			if new_plant != null:
 				varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-				new_plant.set_plant_type(varieties[var_rng.randi() % varieties.size()])
+				new_plant.set_plant_type(varieties[int(variety_roll * varieties.size())])
 		elif between(roll, 0.9, 0.95) and not is_suppressed_by_nearby_tree(tile_pos, 3):
 			var new_tree = spawn_object(tile_pos, chunk_coords, tree)
 			if new_tree != null:
@@ -673,57 +722,39 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 	elif between(detail_noise, 0.6, 0.7): # STONE MICRO BIOME
 		BetterTerrain.set_cell(tilemap, Layers.STONE, tile_pos, Terrain.STONE)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
-		
-		var var_rng = RandomNumberGenerator.new()
-		var_rng.seed = base_seed + 8888
-		
 		if between(detail_noise, 0.6, 0.63):
 			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[var_rng.randi() % varieties.size()]])
-		if var_rng.randf() > 0.95:
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
+		if tile_hash(tile_pos, 5) > 0.95:
 			var container = spawn_object(tile_pos, chunk_coords, placeable)
 			if container != null:
 				var container_types = [container.OBJECT_TYPE.BARREL_1, container.OBJECT_TYPE.CRATE_1]
-				container.object_type = container_types[var_rng.randi() % container_types.size()]
+				container.object_type = container_types[int(tile_hash(tile_pos, 6) * container_types.size())]
+
 	else: # FOREST
 		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
 		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
 		BetterTerrain.set_cell(tilemap, Layers.FLOOR, tile_pos, Terrain.GRASS)
 		
-		var var_rng = RandomNumberGenerator.new()
-		var_rng.seed = base_seed + 9999
-				
 		# DECORATION FLOWERS
 		if between(secondary_detail_noise, 0.0, 0.05):
 			varieties = ["forest_flower_white_1", "forest_flower_white_2", "forest_flower_white_3", "forest_flower_white_4", "forest_flower_white_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[var_rng.randi() % varieties.size()]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
 		if between(secondary_detail_noise, 0.2, 0.2075):
 			varieties = ["forest_flower_yellow_1", "forest_flower_yellow_2", "forest_flower_yellow_3", "forest_flower_yellow_4", "forest_flower_yellow_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 7) * varieties.size())]])
 		if between(secondary_detail_noise, 0.4, 0.4075):
 			varieties = ["forest_flower_red_1", "forest_flower_red_2", "forest_flower_red_3", "forest_flower_red_4", "forest_flower_red_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 8) * varieties.size())]])
 		if between(secondary_detail_noise, 0.6, 0.6075):
 			varieties = ["forest_flower_purple_1", "forest_flower_purple_2", "forest_flower_purple_3", "forest_flower_purple_4", "forest_flower_purple_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 9) * varieties.size())]])
 			
 		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 			if new_plant != null:
 				varieties = ["forest_plant_1", "forest_plant_2", "forest_plant_3", "forest_plant_4", "forest_plant_5"]
-				new_plant.set_plant_type(varieties[var_rng.randi() % varieties.size()])
-				
-		
-		if wants_to_be_tree(tile_pos) and is_suppressed_by_nearby_tree(tile_pos, 3):
-			if not changed_tiles_by_chunk.has(chunk_coords):
-				changed_tiles_by_chunk[chunk_coords] = {}
-			var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
-			changed_tiles_by_chunk[chunk_coords][modified_key] = {
-				"terrain_type": Terrain.MODIFIED_AREA,
-				"layer_index": Layers.MODIFIEDAREA,
-				"x": tile_pos.x,
-				"y": tile_pos.y
-				}
+				new_plant.set_plant_type(varieties[int(variety_roll * varieties.size())])
 		elif wants_to_be_tree(tile_pos) and not is_suppressed_by_nearby_tree(tile_pos, 3):
 			if between(roll, 0.8, 0.9):
 				var new_tree = spawn_object(tile_pos, chunk_coords, tree)
@@ -798,6 +829,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
+	use_changeset = false
 	if blueprint.is_empty():
 		return false
 	var first_entry = blueprint[0]
@@ -850,19 +882,18 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 	return true
 	
 func wants_to_be_tree(tile_pos: Vector2i) -> bool:
-	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
-	var rng = RandomNumberGenerator.new()
-	rng.seed = tile_seed
-	var roll = rng.randf()
-	return roll > 0.8
+	return tile_hash(tile_pos) > 0.8
 
 func tree_priority(tile_pos: Vector2i) -> float:
-	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
-	var rng = RandomNumberGenerator.new()
-	rng.seed = tile_seed
-	rng.randf()
-	return rng.randf()
+	return tile_hash(tile_pos, 1)
 
+func tile_hash(tile_pos: Vector2i, salt: int = 0) -> float:
+	var h = int(Global.world_data.seed) + (tile_pos.x * 374761393) + (tile_pos.y * 668265263) + salt
+	h = (h ^ (h >> 16)) * 0x45d9f3b
+	h = (h ^ (h >> 16)) * 0x45d9f3b
+	h = h ^ (h >> 16)
+	return (h & 0x7fffffff) / float(0x7fffffff) 
+	
 func is_suppressed_by_nearby_tree(tile_pos: Vector2i, min_distance: int) -> bool:
 	if not wants_to_be_tree(tile_pos):
 		return true
