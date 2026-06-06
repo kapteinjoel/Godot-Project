@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 3 # How many chunks to render around the player
+@export var view_distance := 8 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -40,7 +40,7 @@ var dirty_chunks := {}  # tracks which chunks need saving
 var chunks_with_saved_data := {}  # populated on world load
 
 # The tilemap layer for the player to edit tiles at
-var players_layer_index := 7
+var players_layer_index := 9
 
 # Used to store tiles changed by the player by their chunk
 var changed_tiles_by_chunk : Dictionary = {}
@@ -68,7 +68,8 @@ enum Terrain {
 	WATER_MEDIUM = 13,
 	WOOD_FLOOR = 14,
 	MODIFIED_AREA = 15,
-	GROUND_PLACEHOLDER = 16
+	GROUND_PLACEHOLDER = 16,
+	WOOD_WALL = 17
 	}
 
 # Decoration tiles that cannot be interacted with, used as an overlay
@@ -210,7 +211,7 @@ func _enter_tree() -> void:
 func _input(event):
 	if event.is_action_pressed("change_tile"):
 		var hovered_tile = tilefollower.get_hovered_tile_coords()
-		change_tile_at_location(hovered_tile, players_layer_index, Terrain.SAND)
+		change_tile_at_location(hovered_tile, players_layer_index, Terrain.WOOD_WALL)
 		
 func _on_save_timer_timeout() -> void:
 	for chunk_coords in dirty_chunks.keys():
