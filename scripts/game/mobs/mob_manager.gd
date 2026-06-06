@@ -4,6 +4,7 @@ extends Node2D
 @export var max_total_mobs: int = 100
 @export var mob_limits = {"Bee": 10} # Limits specific mobs
 @onready var world_tile_map = get_node("../WorldTileMap") 
+@onready var mobs_container = get_node("../Mobs")
 @export var chunk_size: int = 6 # Set this to match your generation script
 @export var region_size_in_chunks: int = 10
 
@@ -50,8 +51,9 @@ func spawn_at_random_edge():
 	var new_bee = bee_scene.instantiate()
 	new_bee.global_position = spawn_pos
 	new_bee.add_to_group("Bee")
-	add_child(new_bee)
+	#add_child(new_bee)
 	active_mobs.append(new_bee)
+	mobs_container.add_child(new_bee)
 
 func clean_up_mobs():
 	var player = get_parent().player
@@ -88,11 +90,11 @@ func load_mobs_for_chunk(chunk_pos: Vector2i):
 				new_mob = bee_scene.instantiate()
 			
 			if new_mob:
-				add_child(new_mob)
+				mobs_container.add_child(new_mob)
 				if new_mob.has_method("initialize_from_save"):
 					new_mob.initialize_from_save(data["pos"], data["current_health"])
-				new_mob.add_to_group("Bee")
 				active_mobs.append(new_mob)
+				
 		
 		# IMPORTANT: Clear the memory for this chunk so we don't 
 		# double-spawn them if the function is called again

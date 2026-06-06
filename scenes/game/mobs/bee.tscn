@@ -26,11 +26,11 @@ animations = [{
 }]
 
 [node name="CharacterBody2D" type="CharacterBody2D" groups=["Bee"]]
-z_index = 7
-y_sort_enabled = true
 script = ExtResource("1_vd5ox")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+y_sort_enabled = true
+position = Vector2(0, -3)
 sprite_frames = SubResource("SpriteFrames_8b6p1")
 animation = &"fly"
 speed_scale = 4.0

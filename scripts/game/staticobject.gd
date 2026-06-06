@@ -6,6 +6,8 @@ var tile_pos: Vector2i
 @onready var sprite := $Sprite2D
 @onready var stems := $Stems
 
+var inventory: Array = []
+
 enum OBJECT_TYPE {
 	ROCK_1,
 	BARREL_1,
@@ -142,3 +144,16 @@ func _apply_object_type():
 			stems.offset = OBJECT_OFFSETS[stem_type]
 		if OBJECT_Z_INDEX.has(stem_type):
 			stems.z_index = OBJECT_Z_INDEX[stem_type]
+
+func load_data(data: Dictionary):
+	if data.is_empty():
+		return
+	# example: restore inventory contents
+	if data.has("items"):
+		inventory = data["items"]
+
+func get_data() -> Dictionary:
+	# example: serialize current state to save
+	return {
+		"items": inventory
+	}

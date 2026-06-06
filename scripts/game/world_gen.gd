@@ -47,9 +47,9 @@ var changed_tiles_by_chunk : Dictionary = {}
 #var reserved_tiles: Dictionary = {}
 
 # Tilemap layers
-enum Layers { STONE = -11, SAND = -10, GRASS = -9, UNDERWATER = -8, WATERSHADER = -7, WATER = -6, GROUND = -5, FLOOR = -4, FLOOR_DECOR = -3,  COLLISION = -2, MODIFIEDAREA = -1 }
+enum Layers { STONE = -12, SAND = -11, GRASS = -10, UNDERWATER = -9, WATERSHADER = -8, WATER = -7, GROUND = -6, FLOOR = -5, FLOOR_DECOR = -4,  COLLISION = -3, OBJECTTILE = -2, MODIFIEDAREA = -1 }
 # Tiles/Terrains used in chunk generation
-enum LayersToUpdate { GROUND = -5, FLOOR = -4, COLLISION = -2 }
+enum LayersToUpdate { GROUND = -6, FLOOR = -5, COLLISION = -3 }
 
 enum Terrain { 
 	GRASS = 0, 
@@ -106,40 +106,75 @@ var DECORATIONS = {
 	"forest_flower_red_5": Vector2i(21, 4),
 }
 
-const HOUSE_1 = [
-	[Vector2i(0,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(1,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(2,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(3,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(4,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(5,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(6,0), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(0,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(1,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
+var OBJECT_SETUP_FNS = {
+	"CHEST_1": func(obj, data): obj.object_type = obj.OBJECT_TYPE.CHEST_1; obj.load_contents(data),
+	"BARREL_1": func(obj, data): obj.object_type = obj.OBJECT_TYPE.BARREL_1,
+}
+
+var HOUSE_1 = [
+
+	# --- Walls (COLLISION layer) ---
+	# Top edge (y = 0)
+	[Vector2i(0,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(1,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(2,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(3,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(4,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(5,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(6,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(7,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(8,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	# Left edge (x = 0, y = 1..4)
+	[Vector2i(0,1), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(0,2), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(0,3), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(0,4), Layers.COLLISION, Terrain.WOOD_WALL],
+	# Right edge (x = 8, y = 1..4)
+	[Vector2i(8,1), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(8,2), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(8,3), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(8,4), Layers.COLLISION, Terrain.WOOD_WALL],
+	# Bottom of main body (y = 5, x = 2..8) — x=1 is the doorway column so no wall here
+	[Vector2i(2,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(3,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(4,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(5,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(6,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(7,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(8,5), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(0,5), Layers.COLLISION, Terrain.WOOD_WALL],
+
+	# --- Floor ---
+	[Vector2i(1,1), Layers.FLOOR, Terrain.WOOD_FLOOR, "BARREL_1"],
 	[Vector2i(2,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(3,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(4,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(5,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(6,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(0,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(7,1), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(1,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(2,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(3,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(4,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(5,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(6,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(0,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(7,2), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(1,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(2,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(3,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(4,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(5,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(6,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(0,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	
-	#[Vector2i(0,0), Layers.COLLISION, Terrain.WOOD_WALL],
+	[Vector2i(7,3), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(1,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(2,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(3,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(4,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(5,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(6,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(7,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(1,5), Layers.FLOOR, Terrain.WOOD_FLOOR],
 ]
-
 func _ready() -> void:
 	set_process(false)
 	randomize()
@@ -245,9 +280,12 @@ func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_ty
 		"y": tile_coords.y
 	}
 	# ---------------------------------------------------------------------------------
-
+	var object_key = str(tile_coords.x, ",", tile_coords.y, "_object")
+	if changed_tiles_by_chunk[chunk_coords].has(object_key):
+		changed_tiles_by_chunk[chunk_coords].erase(object_key)
+		
 	dirty_chunks[chunk_coords] = true  # mark dirty, don't write yet
-
+	
 	if generated_chunks.has(chunk_coords):
 		generated_chunks.erase(chunk_coords)
 	if chunk_containers.has(chunk_coords):
@@ -279,6 +317,20 @@ func load_saved_chunk_index() -> void:
 				chunks_with_saved_data[coords] = true
 		file_name = dir.get_next()
 	dir.list_dir_end()
+	
+func save_object_to_chunk(tile_pos: Vector2i, object_id: String, object_data: Dictionary = {}):
+	var chunk_coords = get_chunk_coords(tile_pos)
+	if not changed_tiles_by_chunk.has(chunk_coords):
+		changed_tiles_by_chunk[chunk_coords] = {}
+	var object_key = str(tile_pos.x, ",", tile_pos.y, "_object")
+	changed_tiles_by_chunk[chunk_coords][object_key] = {
+		"type": "object",
+		"object_id": object_id,
+		"object_data": object_data,
+		"x": tile_pos.x,
+		"y": tile_pos.y
+	}
+	dirty_chunks[chunk_coords] = true
 
 func save_chunk_changes(chunk_coords: Vector2i) -> void:
 	if not changed_tiles_by_chunk.has(chunk_coords):
@@ -391,8 +443,8 @@ func clear_chunk_object_tiles(chunk_coords: Vector2i):
 	for x in range(chunk_size):
 		for y in range(chunk_size):
 			var tile_pos = chunk_origin + Vector2i(x, y)
-			if BetterTerrain.get_cell(tilemap, Layers.COLLISION, tile_pos) == Terrain.OBJECT_TILE:
-				tilemap.erase_cell(Layers.COLLISION, tile_pos)
+			if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, tile_pos) == Terrain.OBJECT_TILE:
+				tilemap.erase_cell(Layers.OBJECTTILE, tile_pos)
 
 func get_or_create_chunk_container(chunk_coords: Vector2i):
 	# If container already exists get it and skip the rest
@@ -458,20 +510,30 @@ func generate_chunk_new(chunk_coords: Vector2i):
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
 		
-		# 1. Pull the raw x and y ints we saved and convert them to a strict Vector2i
-		var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
+		# Skip object entries — handled separately below
+		if tile_data.get("type", "") == "object":
+			continue
 		
-		# 2. Extract and cast your layer and terrain type to strict integers
+		var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
 		var terrain_type = int(tile_data.get("terrain_type", Terrain.GRASS))
 		var saved_layer_index = int(tile_data.get("layer_index", players_layer_index))
-		
-		# 3. Pass the correctly typed variables to BetterTerrain
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
 
 	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
 	for layer in LayersToUpdate.keys():
 		BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
 		
+	# load in placed objects
+	for key in changed_tiles_in_this_chunk.keys():
+		var tile_data = changed_tiles_in_this_chunk[key]
+		if tile_data.get("type", "") == "object":
+			var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
+			var instance = spawn_object(tile_pos, chunk_coords, placeable, true)
+			if instance != null:
+				var object_id = tile_data.get("object_id", "")
+				var object_data = tile_data.get("object_data", {})
+				if OBJECT_SETUP_FNS.has(object_id):
+					OBJECT_SETUP_FNS[object_id].call(instance, object_data)
 	# After All generation is done reload past mobs
 	get_node("MobManager").load_mobs_for_chunk(chunk_coords)
 		
@@ -714,14 +776,15 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	var gradient = sqrt(dx * dx + dy * dy)
 	return center / max(gradient, 0.008)
 	
-func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene):
-	if BetterTerrain.get_cell(tilemap, Layers.COLLISION, tile_pos) == Terrain.OBJECT_TILE:
+func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene, ignore_modified: bool = false):
+	if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, tile_pos) == Terrain.OBJECT_TILE:
 		return null
-		
-	var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
-	if changed_tiles_by_chunk.has(chunk_coords):
-		if changed_tiles_by_chunk[chunk_coords].has(modified_key):
-			return null
+	
+	if not ignore_modified:
+		var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
+		if changed_tiles_by_chunk.has(chunk_coords):
+			if changed_tiles_by_chunk[chunk_coords].has(modified_key):
+				return null
 
 	var container = get_or_create_chunk_container(chunk_coords)
 	var instance = scene_to_spawn.instantiate()
@@ -730,37 +793,33 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	instance.tile_pos = tile_pos
 	container.add_child(instance)
 	
-	BetterTerrain.set_cell(tilemap, Layers.COLLISION, tile_pos, Terrain.OBJECT_TILE)
+	BetterTerrain.set_cell(tilemap, Layers.OBJECTTILE, tile_pos, Terrain.OBJECT_TILE)
 	
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
 	if blueprint.is_empty():
 		return false
-
 	var first_entry = blueprint[0]
 	var first_tile_pos = origin + first_entry[0]
 	var first_layer = first_entry[1]
 	var first_chunk_coords = get_chunk_coords(first_tile_pos)
 	var first_tile_key = str(first_tile_pos.x, ",", first_tile_pos.y, "_", first_layer)
-
 	if changed_tiles_by_chunk.has(first_chunk_coords):
 		if changed_tiles_by_chunk[first_chunk_coords].has(first_tile_key):
 			return false
-
 	print("Stamping house at origin: ", origin, " first tile: ", first_tile_pos, " chunk: ", first_chunk_coords)
-
 	var affected_chunks = {}
+	affected_chunks[first_chunk_coords] = true
 
 	for entry in blueprint:
 		var tile_pos = origin + entry[0]
 		var layer = entry[1]
 		var dterrain = entry[2]
+		var setup_fn = entry[3] if entry.size() > 3 else null
 		var chunk_coords = get_chunk_coords(tile_pos)
-
 		if not changed_tiles_by_chunk.has(chunk_coords):
 			changed_tiles_by_chunk[chunk_coords] = {}
-
 		var unique_key = str(tile_pos.x, ",", tile_pos.y, "_", layer)
 		changed_tiles_by_chunk[chunk_coords][unique_key] = {
 			"terrain_type": dterrain,
@@ -768,7 +827,6 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 			"x": tile_pos.x,
 			"y": tile_pos.y
 		}
-
 		var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
 		changed_tiles_by_chunk[chunk_coords][modified_key] = {
 			"terrain_type": Terrain.MODIFIED_AREA,
@@ -776,9 +834,10 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 			"x": tile_pos.x,
 			"y": tile_pos.y
 		}
-
 		dirty_chunks[chunk_coords] = true
 		affected_chunks[chunk_coords] = true
+		if setup_fn != null:
+			save_object_to_chunk(tile_pos, setup_fn)
 
 	# Reload each affected chunk exactly once
 	for chunk_coords in affected_chunks:
@@ -789,7 +848,7 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 				chunk_containers.erase(chunk_coords)
 				clear_chunk_object_tiles(chunk_coords)
 	return true
-
+	
 func wants_to_be_tree(tile_pos: Vector2i) -> bool:
 	var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
 	var rng = RandomNumberGenerator.new()

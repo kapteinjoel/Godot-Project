@@ -1710,112 +1710,144 @@ texture = ExtResource("5_y7cus")
 }
 25:14/size_in_atlas = Vector2i(3, 3)
 25:14/0 = 0
-25:14/0/metadata/_better_terrain = {
-&"type": 17
-}
 28:14/size_in_atlas = Vector2i(3, 3)
 28:14/0 = 0
-28:14/0/metadata/_better_terrain = {
-0: [17],
-&"type": 17
-}
 31:14/size_in_atlas = Vector2i(3, 3)
 31:14/0 = 0
-31:14/0/metadata/_better_terrain = {
-0: [17],
-8: [17],
-&"type": 17
-}
 34:14/size_in_atlas = Vector2i(3, 3)
 34:14/0 = 0
-34:14/0/metadata/_better_terrain = {
-8: [17],
-&"type": 17
-}
 25:10/size_in_atlas = Vector2i(3, 3)
 25:10/0 = 0
-25:10/0/metadata/_better_terrain = {
-12: [17],
-&"type": 17
-}
 28:10/size_in_atlas = Vector2i(3, 3)
 28:10/0 = 0
-28:10/0/metadata/_better_terrain = {
-0: [17],
-12: [17],
-&"type": 17
-}
 31:10/size_in_atlas = Vector2i(3, 3)
 31:10/0 = 0
-31:10/0/metadata/_better_terrain = {
-0: [17],
-8: [17],
-12: [17],
-&"type": 17
-}
 34:10/size_in_atlas = Vector2i(3, 3)
 34:10/0 = 0
-34:10/0/metadata/_better_terrain = {
-8: [17],
-12: [17],
-&"type": 17
-}
 25:6/size_in_atlas = Vector2i(3, 3)
 25:6/0 = 0
-25:6/0/metadata/_better_terrain = {
-4: [17],
-12: [17],
-&"type": 17
-}
 28:6/size_in_atlas = Vector2i(3, 3)
 28:6/0 = 0
-28:6/0/metadata/_better_terrain = {
-0: [17],
-4: [17],
-12: [17],
-&"type": 17
-}
 31:6/size_in_atlas = Vector2i(3, 3)
 31:6/0 = 0
-31:6/0/metadata/_better_terrain = {
-0: [17],
-4: [17],
-8: [17],
-12: [17],
-&"type": 17
-}
 34:6/size_in_atlas = Vector2i(3, 3)
 34:6/0 = 0
-34:6/0/metadata/_better_terrain = {
+25:2/size_in_atlas = Vector2i(3, 3)
+25:2/0 = 0
+28:2/size_in_atlas = Vector2i(3, 3)
+28:2/0 = 0
+31:2/size_in_atlas = Vector2i(3, 3)
+31:2/0 = 0
+34:2/size_in_atlas = Vector2i(3, 3)
+34:2/0 = 0
+42:14/size_in_atlas = Vector2i(3, 3)
+42:14/0 = 0
+42:14/0/metadata/_better_terrain = {
+&"type": 17
+}
+45:14/size_in_atlas = Vector2i(3, 3)
+45:14/0 = 0
+45:14/0/metadata/_better_terrain = {
+0: [17],
+&"type": 17
+}
+48:14/size_in_atlas = Vector2i(3, 3)
+48:14/0 = 0
+48:14/0/metadata/_better_terrain = {
+0: [17],
+8: [17],
+&"type": 17
+}
+51:14/size_in_atlas = Vector2i(3, 3)
+51:14/0 = 0
+51:14/0/metadata/_better_terrain = {
+8: [17],
+&"type": 17
+}
+51:11/size_in_atlas = Vector2i(3, 3)
+51:11/0 = 0
+51:11/0/metadata/_better_terrain = {
+8: [17],
+12: [17],
+&"type": 17
+}
+48:11/size_in_atlas = Vector2i(3, 3)
+48:11/0 = 0
+48:11/0/metadata/_better_terrain = {
+0: [17],
+8: [17],
+12: [17],
+&"type": 17
+}
+45:11/size_in_atlas = Vector2i(3, 3)
+45:11/0 = 0
+45:11/0/metadata/_better_terrain = {
+0: [17],
+12: [17],
+&"type": 17
+}
+42:11/size_in_atlas = Vector2i(3, 3)
+42:11/0 = 0
+42:11/0/metadata/_better_terrain = {
+12: [17],
+&"type": 17
+}
+42:8/size_in_atlas = Vector2i(3, 3)
+42:8/0 = 0
+42:8/0/metadata/_better_terrain = {
+4: [17],
+12: [17],
+&"type": 17
+}
+42:5/size_in_atlas = Vector2i(3, 3)
+42:5/0 = 0
+42:5/0/metadata/_better_terrain = {
+4: [17],
+&"type": 17
+}
+45:5/size_in_atlas = Vector2i(3, 3)
+45:5/0 = 0
+45:5/0/metadata/_better_terrain = {
+0: [17],
+4: [17],
+&"type": 17
+}
+45:8/size_in_atlas = Vector2i(3, 3)
+45:8/0 = 0
+45:8/0/metadata/_better_terrain = {
+0: [17],
+4: [17],
+12: [17],
+&"type": 17
+}
+48:8/size_in_atlas = Vector2i(3, 3)
+48:8/0 = 0
+48:8/0/metadata/_better_terrain = {
+0: [17],
 4: [17],
 8: [17],
 12: [17],
 &"type": 17
 }
-25:2/size_in_atlas = Vector2i(3, 3)
-25:2/0 = 0
-25:2/0/metadata/_better_terrain = {
+51:8/size_in_atlas = Vector2i(3, 3)
+51:8/0 = 0
+51:8/0/metadata/_better_terrain = {
 4: [17],
+8: [17],
+12: [17],
 &"type": 17
 }
-28:2/size_in_atlas = Vector2i(3, 3)
-28:2/0 = 0
-28:2/0/metadata/_better_terrain = {
-0: [17],
-4: [17],
-&"type": 17
-}
-31:2/size_in_atlas = Vector2i(3, 3)
-31:2/0 = 0
-31:2/0/metadata/_better_terrain = {
+48:5/size_in_atlas = Vector2i(3, 3)
+48:5/0 = 0
+48:5/0/metadata/_better_terrain = {
 0: [17],
 4: [17],
 8: [17],
 &"type": 17
 }
-34:2/size_in_atlas = Vector2i(3, 3)
-34:2/0 = 0
-34:2/0/metadata/_better_terrain = {
+51:5/size_in_atlas = Vector2i(3, 3)
+51:5/0 = 0
+51:5/0/metadata/_better_terrain = {
 4: [17],
 8: [17],
 &"type": 17
@@ -2053,8 +2085,10 @@ layer_8/z_index = 6
 layer_9/name = "Collision"
 layer_9/y_sort_enabled = true
 layer_9/z_index = 7
-layer_10/name = "Modified Area"
-layer_10/z_index = 10
+layer_10/name = "ObjectTiles"
+layer_10/z_index = 9
+layer_11/name = "Modified Area"
+layer_11/z_index = 10
 
 [node name="Tileset" type="Sprite2D" parent="World"]
 visible = false
@@ -2083,6 +2117,8 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="Mobs" type="Container" parent="World"]
+z_index = 7
+y_sort_enabled = true
 offset_right = 40.0
 offset_bottom = 40.0
 
