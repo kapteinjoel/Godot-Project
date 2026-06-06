@@ -714,17 +714,14 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	return center / max(gradient, 0.008)
 	
 func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene):
-	# 1. Check if the tilemap already has a collision tile drawn
 	if BetterTerrain.get_cell(tilemap, Layers.COLLISION, tile_pos) == Terrain.OBJECT_TILE:
 		return null
 		
-	# 2. Check save data dictionary directly to see if this tile was modified or stamped
 	var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
 	if changed_tiles_by_chunk.has(chunk_coords):
 		if changed_tiles_by_chunk[chunk_coords].has(modified_key):
-			return null # A house or user modification is saved here! Block spawn.
+			return null
 
-	# 3. Proceed with spawning if safe
 	var container = get_or_create_chunk_container(chunk_coords)
 	var instance = scene_to_spawn.instantiate()
 	
@@ -737,36 +734,59 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
-	# Safety check: make sure the blueprint isn't completely empty
 	if blueprint.is_empty():
 		return false
 
-	# 1. Grab the very first tile's data from the blueprint
 	var first_entry = blueprint[0]
 	var first_tile_pos = origin + first_entry[0]
 	var first_layer = first_entry[1]
-	
-	# 2. Find which chunk this first tile belongs to
 	var first_chunk_coords = get_chunk_coords(first_tile_pos)
-	
-	# 3. Construct the exact unique string key used by your save system
 	var first_tile_key = str(first_tile_pos.x, ",", first_tile_pos.y, "_", first_layer)
-	
-	# 4. Check if this specific chunk has data, and if it already contains this tile key
+
 	if changed_tiles_by_chunk.has(first_chunk_coords):
 		if changed_tiles_by_chunk[first_chunk_coords].has(first_tile_key):
-			# The first tile already exists in saved data! Skip the entire house.
 			return false
+
 	print("Stamping house at origin: ", origin, " first tile: ", first_tile_pos, " chunk: ", first_chunk_coords)
-	# 5. If it doesn't exist, proceed with stamping the house normally
+
+	var affected_chunks = {}
+
 	for entry in blueprint:
 		var tile_pos = origin + entry[0]
 		var layer = entry[1]
 		var dterrain = entry[2]
-		change_tile_at_location(tile_pos, layer, dterrain)
-		#reserved_tiles[tile_pos] = true
-		
-	#print("made a house")
+		var chunk_coords = get_chunk_coords(tile_pos)
+
+		if not changed_tiles_by_chunk.has(chunk_coords):
+			changed_tiles_by_chunk[chunk_coords] = {}
+
+		var unique_key = str(tile_pos.x, ",", tile_pos.y, "_", layer)
+		changed_tiles_by_chunk[chunk_coords][unique_key] = {
+			"terrain_type": dterrain,
+			"layer_index": layer,
+			"x": tile_pos.x,
+			"y": tile_pos.y
+		}
+
+		var modified_key = str(tile_pos.x, ",", tile_pos.y, "_", Layers.MODIFIEDAREA)
+		changed_tiles_by_chunk[chunk_coords][modified_key] = {
+			"terrain_type": Terrain.MODIFIED_AREA,
+			"layer_index": Layers.MODIFIEDAREA,
+			"x": tile_pos.x,
+			"y": tile_pos.y
+		}
+
+		dirty_chunks[chunk_coords] = true
+		affected_chunks[chunk_coords] = true
+
+	# Reload each affected chunk exactly once
+	for chunk_coords in affected_chunks:
+		if generated_chunks.has(chunk_coords):
+			generated_chunks.erase(chunk_coords)
+			if chunk_containers.has(chunk_coords):
+				chunk_containers[chunk_coords].queue_free()
+				chunk_containers.erase(chunk_coords)
+				clear_chunk_object_tiles(chunk_coords)
 	return true
 
 func wants_to_be_tree(tile_pos: Vector2i) -> bool:
