@@ -13,7 +13,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 @onready var players_container = $Players
 @onready var mob_manager = $MobManager
 
-@onready var minimap =  get_tree().get_first_node_in_group("minimap")
+#@onready var minimap =  get_tree().get_first_node_in_group("minimap")
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
@@ -246,7 +246,6 @@ func _process(_delta: float) -> void:
 	load_chunks_around(center_chunk)
 	unload_far_chunks(center_chunk)
 	
-	# Loop backward through active sets so we can safely remove them as they finish
 	for i in range(active_change_sets.size() - 1, -1, -1):
 		var change_set = active_change_sets[i]
 		

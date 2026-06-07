@@ -1,10 +1,12 @@
-[gd_scene load_steps=33 format=3 uid="uid://bjy1a2h1aq2ok"]
+[gd_scene load_steps=37 format=3 uid="uid://bjy1a2h1aq2ok"]
 
 [ext_resource type="Script" uid="uid://db6g1ph7mb766" path="res://scripts/gui/fps_label.gd" id="1_rwo3j"]
 [ext_resource type="Script" uid="uid://cv6u16qbqrl1j" path="res://scripts/game/day_night_cycle.gd" id="2_ph5vl"]
 [ext_resource type="Texture2D" uid="uid://bnuwv3byqmibl" path="res://assets/images/tilesets/game_ui.png" id="2_vaxfo"]
 [ext_resource type="Script" uid="uid://ccwa4p2ggrcj2" path="res://scripts/game/world_gen.gd" id="3_5rpqn"]
+[ext_resource type="Script" uid="uid://bfrfbir62ed5k" path="res://scenes/game/minimap.gd" id="4_ftsea"]
 [ext_resource type="Shader" uid="uid://cxd03ly0r6a6t" path="res://assets/shaders/fog.gdshader" id="5_ftsea"]
+[ext_resource type="Texture2D" uid="uid://d4dsef7ivgb0b" path="res://assets/images/tilesets/minimaptiles.png" id="5_otnwt"]
 [ext_resource type="Texture2D" uid="uid://ohxln8hb5mlu" path="res://assets/images/tilesets/Grass.png" id="5_y7cus"]
 [ext_resource type="Shader" uid="uid://br27bhqqklxe1" path="res://assets/shaders/water2.gdshader" id="6_kp23o"]
 [ext_resource type="Texture2D" uid="uid://dkn61dbysdcfg" path="res://assets/images/tilesets/Water.png" id="6_wg16f"]
@@ -26,6 +28,20 @@ shader_parameter/fog_mask = SubResource("NoiseTexture2D_3xj4h")
 shader_parameter/fog_direction = Vector2(1, 1)
 shader_parameter/scroll_noise_tex = false
 shader_parameter/noise_scroll_direction = Vector2(1, 0)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3xj4h"]
+texture = ExtResource("5_otnwt")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_otnwt"]
+tile_size = Vector2i(4, 4)
+sources/1 = SubResource("TileSetAtlasSource_3xj4h")
 
 [sub_resource type="Gradient" id="Gradient_6fgid"]
 offsets = PackedFloat32Array(0, 0.178161, 0.729885, 0.844828)
@@ -2018,9 +2034,13 @@ offset_bottom = 1080.0
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="HUD" type="CanvasLayer" parent="UI"]
 
@@ -2040,6 +2060,33 @@ scale = Vector2(4, 4)
 texture = ExtResource("2_vaxfo")
 region_enabled = true
 region_rect = Rect2(-0.05160427, -0.12470102, 33.084576, 8.094673)
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="UI/HUD"]
+custom_minimum_size = Vector2(20, 20)
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1920.0
+offset_right = -1720.0
+offset_bottom = 200.0
+grow_horizontal = 0
+script = ExtResource("4_ftsea")
+
+[node name="SubViewport" type="SubViewport" parent="UI/HUD/SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(20, 20)
+render_target_update_mode = 4
+
+[node name="MiniMap" type="TileMap" parent="UI/HUD/SubViewportContainer/SubViewport"]
+tile_set = SubResource("TileSet_otnwt")
+format = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="UI/HUD/SubViewportContainer/SubViewport"]
+
+[node name="Camera2D" type="Camera2D" parent="UI/HUD/SubViewportContainer/SubViewport"]
+
+[node name="MiniMapTileset" type="Sprite2D" parent="UI/HUD/SubViewportContainer/SubViewport"]
+visible = false
 
 [node name="DayNightCycle" type="Node2D" parent="."]
 texture_filter = 2
