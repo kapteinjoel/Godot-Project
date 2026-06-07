@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 3 # How many chunks to render around the player
+@export var view_distance := 7 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -272,7 +272,6 @@ func _on_save_timer_timeout() -> void:
 	dirty_chunks.clear()
 	
 func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_type: int):
-	#use_changeset = false
 	var chunk_coords = get_chunk_coords(tile_coords)
 	if not changed_tiles_by_chunk.has(chunk_coords):
 		changed_tiles_by_chunk[chunk_coords] = {}
@@ -354,7 +353,18 @@ func _flush_terrain_updates():
 			var new_set = BetterTerrain.create_terrain_changeset(tilemap, layer_index, cells_to_update)
 			if new_set != null:
 				active_change_sets.append(new_set)
-		
+
+func cancel_pending_updates_in_area(area: Rect2i):
+	# BetterTerrain changesets don't expose their internal rects easily, 
+	# but we can clear our tracker array if we are completely rewriting the region.
+	# If multiple chunks are processing, it's safest to let the thread finish 
+	# but instantly override its results on the main thread, or clear the queue.
+	
+	# Clear out our un-flushed rects queue so stale frames don't build
+	for i in range(pending_terrain_updates.size() - 1, -1, -1):
+		if area.intersects(pending_terrain_updates[i]):
+			pending_terrain_updates.remove_at(i)		
+			
 func load_saved_chunk_index() -> void:
 	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
 	var chunks_dir = "user://worlds/" + world_name_lower + "/chunks/"
@@ -572,15 +582,6 @@ func generate_chunk_new(chunk_coords: Vector2i):
 		var terrain_type = int(tile_data.get("terrain_type", Terrain.GRASS))
 		var saved_layer_index = int(tile_data.get("layer_index", players_layer_index))
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
-
-	
-	#if use_changeset:
-	#	pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
-	#else:
-	#	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
-	#	for layer in LayersToUpdate.keys():
-	#		BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
-	#	use_changeset = true
 		
 	if chunks_requiring_direct_update.has(chunk_coords):
 		var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
@@ -837,7 +838,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
-	use_changeset = false
+
 	if blueprint.is_empty():
 		return false
 	var first_entry = blueprint[0]
@@ -882,6 +883,12 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 	# Reload each affected chunk exactly once
 	for chunk_coords in affected_chunks:
 		chunks_requiring_direct_update[chunk_coords] = true
+		var start_x = chunk_coords.x * chunk_size
+		var start_y = chunk_coords.y * chunk_size
+		var chunk_box = Rect2i(start_x, start_y, chunk_size, chunk_size)
+		
+		# Cancel any queued up flushes waiting for this area
+		cancel_pending_updates_in_area(chunk_box)
 		if generated_chunks.has(chunk_coords):
 			generated_chunks.erase(chunk_coords)
 			if chunk_containers.has(chunk_coords):
