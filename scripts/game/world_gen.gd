@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 7 # How many chunks to render around the player
+@export var view_distance := 3 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -40,6 +40,7 @@ var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
 var dirty_chunks := {}  # tracks which chunks need saving
 var chunks_with_saved_data := {}  # populated on world load
+var chunks_requiring_direct_update: Dictionary = {}
 var pending_terrain_updates: Array = []
 var current_change_set = null
 var active_change_sets: Array = []
@@ -271,7 +272,7 @@ func _on_save_timer_timeout() -> void:
 	dirty_chunks.clear()
 	
 func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_type: int):
-	use_changeset = false
+	#use_changeset = false
 	var chunk_coords = get_chunk_coords(tile_coords)
 	if not changed_tiles_by_chunk.has(chunk_coords):
 		changed_tiles_by_chunk[chunk_coords] = {}
@@ -303,7 +304,7 @@ func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_ty
 		changed_tiles_by_chunk[chunk_coords].erase(object_key)
 		
 	dirty_chunks[chunk_coords] = true  # mark dirty, don't write yet
-	
+	chunks_requiring_direct_update[chunk_coords] = true
 	if generated_chunks.has(chunk_coords):
 		generated_chunks.erase(chunk_coords)
 	if chunk_containers.has(chunk_coords):
@@ -572,18 +573,25 @@ func generate_chunk_new(chunk_coords: Vector2i):
 		var saved_layer_index = int(tile_data.get("layer_index", players_layer_index))
 		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
 
-	#var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 1, chunk_size + 1)
-	#for layer in LayersToUpdate.keys():
-	#	BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
+	
+	#if use_changeset:
+	#	pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
+	#else:
+	#	var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
+	#	for layer in LayersToUpdate.keys():
+	#		BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
+	#	use_changeset = true
 		
-	#pending_terrain_updates.append(Rect2i(start_x, start_y, chunk_size, chunk_size))
-	if use_changeset:
-		pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
-	else:
+	if chunks_requiring_direct_update.has(chunk_coords):
 		var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
 		for layer in LayersToUpdate.keys():
 			BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
-		use_changeset = true
+		
+		# Clean up the tracker for this chunk since it's now updated
+		chunks_requiring_direct_update.erase(chunk_coords)
+	else:
+		# Use your optimized background thread changeset
+		pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
 	
 	# load in placed objects
 	for key in changed_tiles_in_this_chunk.keys():
@@ -873,6 +881,7 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 
 	# Reload each affected chunk exactly once
 	for chunk_coords in affected_chunks:
+		chunks_requiring_direct_update[chunk_coords] = true
 		if generated_chunks.has(chunk_coords):
 			generated_chunks.erase(chunk_coords)
 			if chunk_containers.has(chunk_coords):
