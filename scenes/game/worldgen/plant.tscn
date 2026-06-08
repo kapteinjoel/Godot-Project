@@ -13,7 +13,7 @@ shader_parameter/strengthScale = 30000.0
 shader_parameter/interval = 0.0
 shader_parameter/detail = 1.0
 shader_parameter/distortion = 0.0
-shader_parameter/heightOffset = 0.990000047025
+shader_parameter/heightOffset = 0.99
 shader_parameter/offset = 3.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3kfpi"]
@@ -25,7 +25,7 @@ shader_parameter/strengthScale = 10000.0
 shader_parameter/interval = 20.0
 shader_parameter/detail = 1.0
 shader_parameter/distortion = 0.0
-shader_parameter/heightOffset = 0.990000047025
+shader_parameter/heightOffset = 0.99
 shader_parameter/offset = 2.0
 
 [node name="Plant" type="Node2D"]
@@ -37,14 +37,14 @@ texture = ExtResource("2_3kfpi")
 centered = false
 offset = Vector2(-8, -13)
 region_enabled = true
-region_rect = Rect2(208.98016, 4.8916864, 10.89093, 27.135014)
+region_rect = Rect2(208.98, 4.89169, 10.8909, 27.135)
 
 [node name="TwoTilePlants" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_3kfpi")
 texture = ExtResource("2_3kfpi")
 offset = Vector2(0, -13.5)
 region_enabled = true
-region_rect = Rect2(239.94098, -0.05587721, 13.80751, 32.082146)
+region_rect = Rect2(239.941, -0.0558772, 13.8075, 32.0821)
 
 [node name="TwoTilePlantsReflection" type="Sprite2D" parent="TwoTilePlants"]
 visible = false
@@ -55,4 +55,4 @@ scale = Vector2(-1, -1)
 texture = ExtResource("2_3kfpi")
 offset = Vector2(0, -13.5)
 region_enabled = true
-region_rect = Rect2(239.94098, -0.05587721, 13.80751, 32.082146)
+region_rect = Rect2(239.941, -0.0558772, 13.8075, 32.0821)

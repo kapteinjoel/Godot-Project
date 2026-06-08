@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 7 # How many chunks to render around the player
+@export var view_distance := 3 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -54,7 +54,8 @@ var changed_tiles_by_chunk : Dictionary = {}
 
 # Tilemap layers
 enum Layers { STONE = -12, SAND = -11, GRASS = -10, UNDERWATER = -9, WATERSHADER = -8, WATER = -7, GROUND = -6, FLOOR = -5, FLOOR_DECOR = -4,  COLLISION = -3, OBJECTTILE = -2, MODIFIEDAREA = -1 }
-# Tiles/Terrains used in chunk generation
+
+# Tiles/Terrains used in chunk generation that need autotiling
 enum LayersToUpdate { GROUND = -6, FLOOR = -5, COLLISION = -3 }
 
 enum Terrain { 
@@ -182,6 +183,7 @@ var HOUSE_1 = [
 	[Vector2i(1,5), Layers.FLOOR, Terrain.WOOD_FLOOR],
 ]
 func _ready() -> void:
+	
 	set_process(false)
 	randomize()
 	
@@ -227,7 +229,7 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
-	load_saved_chunk_index() 
+	#load_saved_chunk_index() 
 	
 	if multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
@@ -236,10 +238,11 @@ func _ready() -> void:
 		# Spawn the host (you)
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
-		mob_manager.set_process(true)
+		mob_manager.set_process(false)
 		set_process(true)
 		
 func _process(_delta: float) -> void:
+	#print(active_change_sets.size())
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
 	
@@ -250,15 +253,18 @@ func _process(_delta: float) -> void:
 		var change_set = active_change_sets[i]
 		
 		if BetterTerrain.is_terrain_changeset_ready(change_set):
+			BetterTerrain.wait_for_terrain_changeset(change_set)
 			BetterTerrain.apply_terrain_changeset(change_set)
 			active_change_sets.remove_at(i) # Clean up this specific thread tracker
-	
+			
 	# Only clear and queue up new updates if ALL previous layer calculations are fully complete
 	if active_change_sets.is_empty():
-		_flush_terrain_updates()
+		pass
+		#_flush_terrain_updates()
 
 func _enter_tree() -> void:
 	$Players/MultiplayerSpawner.spawned.connect(_on_player_spawned)
+	print("enter")
 	
 func _input(event):
 	if event.is_action_pressed("change_tile"):
@@ -495,11 +501,13 @@ func clear_chunk(chunk_coords: Vector2i):
 	for x in range(area.position.x, area.position.x + area.size.x):
 		for y in range(area.position.y, area.position.y + area.size.y):
 			for layer in Layers.keys():
-				tilemap.set_cell(Layers[layer], Vector2i(x, y), -1)
+				#BetterTerrain.set_cell(tilemap, Layers[layer], Vector2i(x, y), -1)
+				tilemap.erase_cell(Layers[layer], Vector2i(x, y))
 	if chunk_containers.has(chunk_coords):
 		var container = chunk_containers[chunk_coords]
 		container.queue_free() # Deletes the container and all objects inside it
 		chunk_containers.erase(chunk_coords) # Remove from dictionary
+	tilemap.update_internals()
 
 func clear_chunk_object_tiles(chunk_coords: Vector2i):
 	var chunk_origin = chunk_coords * chunk_size
@@ -538,17 +546,24 @@ func generate_chunk_new(chunk_coords: Vector2i):
 			object_spawn_rng.seed = tile_seed
 			# === OCEAN ===
 			if alt < 0.2:
-				generate_ocean(tile_pos, chunk_coords, alt)
+				#generate_ocean(tile_pos, chunk_coords, alt)
+				pass
+				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 			# === RIVER — checked before beach so it can cut through to ocean ===
 			elif is_river_tile(x, y, alt):
-				generate_river(tile_pos, chunk_coords)
+				pass
+				#generate_river(tile_pos, chunk_coords)
+				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 			elif is_river_bank(x, y, alt):
-				generate_river_bank(tile_pos, chunk_coords)
+				pass
+				#generate_river_bank(tile_pos, chunk_coords)
+				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 			# === BEACH ===
 			elif between(alt, 0.2, 0.25):
-				#BetterTerrain.set_terrain(ts, Terrain.SAND, terrain.name, terrain.color, terrain.type, [])
-				BetterTerrain.set_cell(tilemap, Layers.SAND , tile_pos, Terrain.SAND)
-				BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
+				pass
+				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				#BetterTerrain.set_cell(tilemap, Layers.SAND , tile_pos, Terrain.SAND)
+				#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
 			# === LAND ZONE ===
 			elif between(alt, 0.25, 0.8):
 				var is_plains = between(moist, 0, 0.4) and between(temp, 0.2, 0.6)
@@ -556,19 +571,24 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				var is_desert = temp > 0.7 and moist < 0.4
 				if is_plains:
 					pass
-					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.PLAIN)
+					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 				elif is_autumn:
 					pass
-					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.AUTUMM)
+					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 				elif is_desert:
 					pass
-					#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.STONE)
+					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 				else:
-					generate_forest(tile_pos, chunk_coords)
+					pass
+					#generate_forest(tile_pos, chunk_coords)
+					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
 			# === HIGH ALTITUDE FOREST ===
 			else:
-				generate_forest(tile_pos, chunk_coords)
+				pass
+				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				#generate_forest(tile_pos, chunk_coords)
 	# Update tiles changed by the player
+	return
 	var changed_tiles_in_this_chunk: Dictionary = changed_tiles_by_chunk.get(chunk_coords, {})
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
@@ -591,7 +611,8 @@ func generate_chunk_new(chunk_coords: Vector2i):
 		chunks_requiring_direct_update.erase(chunk_coords)
 	else:
 		# Use your optimized background thread changeset
-		pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
+		#pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
+		pass
 	
 	# load in placed objects
 	for key in changed_tiles_in_this_chunk.keys():
@@ -605,7 +626,7 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				if OBJECT_SETUP_FNS.has(object_id):
 					OBJECT_SETUP_FNS[object_id].call(instance, object_data)
 	# After All generation is done reload past mobs
-	get_node("MobManager").load_mobs_for_chunk(chunk_coords)
+	#get_node("MobManager").load_mobs_for_chunk(chunk_coords)
 		
 func between(val, start, end):
 	if start <= val and val < end:
@@ -816,6 +837,7 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	return center / max(gradient, 0.008)
 	
 func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene, ignore_modified: bool = false):
+	return null
 	if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, tile_pos) == Terrain.OBJECT_TILE:
 		return null
 	
@@ -837,7 +859,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
-
+	return false
 	if blueprint.is_empty():
 		return false
 	var first_entry = blueprint[0]
@@ -968,4 +990,4 @@ func _on_player_spawned(node: Node):
 		player = node
 		print("Client: My local player is now assigned!")
 		set_process(true)
-		mob_manager.set_process(true)
+		#mob_manager.set_process(true)

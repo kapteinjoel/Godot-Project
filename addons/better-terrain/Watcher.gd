@@ -17,4 +17,3 @@ func tidy() -> bool:
 func activate():
 	if tidy():
 		trigger.emit()
-

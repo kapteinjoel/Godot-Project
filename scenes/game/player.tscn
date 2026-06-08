@@ -12,7 +12,7 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ur7pv"]
 atlas = ExtResource("10_y4r1p")
-region = Rect2(190.98795, 12.903114, 8.141693, 3.2097054)
+region = Rect2(190.988, 12.9031, 8.14169, 3.20971)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3v2ag"]
 atlas = ExtResource("10_y4r1p")
@@ -119,7 +119,7 @@ position = Vector2(0, -1)
 texture = SubResource("AtlasTexture_qfm1y")
 offset = Vector2(0, -1.5)
 region_enabled = true
-region_rect = Rect2(25.028574, 13.99051, 11.969591, 2.0057144)
+region_rect = Rect2(25.0286, 13.9905, 11.9696, 2.00571)
 
 [node name="Legs" type="Sprite2D" parent="PlayerBody"]
 texture = SubResource("AtlasTexture_fulsm")
@@ -192,7 +192,7 @@ position = Vector2(0, -1)
 texture = SubResource("AtlasTexture_qfm1y")
 offset = Vector2(0, -1.5)
 region_enabled = true
-region_rect = Rect2(25.028574, 13.99051, 11.969591, 2.0057144)
+region_rect = Rect2(25.0286, 13.9905, 11.9696, 2.00571)
 
 [node name="Legs" type="Sprite2D" parent="PlayerReflection/PlayerBody2"]
 texture = SubResource("AtlasTexture_fulsm")
@@ -210,4 +210,3 @@ replication_config = SubResource("SceneReplicationConfig_3vq1g")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 visible = false
-zoom = Vector2(4, 4)

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b03wakwt83oeg"]
 
-[ext_resource type="Script" path="res://scripts/gui/game_paused.gd" id="1_sdx3a"]
+[ext_resource type="Script" uid="uid://dtqia5ch4j6pv" path="res://scripts/gui/game_paused.gd" id="1_sdx3a"]
 
 [node name="GamePaused" type="Control"]
 z_index = 102

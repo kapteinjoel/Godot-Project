@@ -11,7 +11,7 @@ noise = SubResource("FastNoiseLite_5u42d")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_472i7"]
 shader = ExtResource("2_sul65")
-shader_parameter/color = Color(0.7984786, 0.816566, 0.9656411, 1)
+shader_parameter/color = Color(0.798479, 0.816566, 0.965641, 1)
 shader_parameter/OCTAVES = 4
 shader_parameter/enable_pixelation = true
 shader_parameter/pixelation_amount = 100

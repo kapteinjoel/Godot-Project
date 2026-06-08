@@ -25,7 +25,7 @@ region_rect = Rect2(10, 36, 6, 8)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_flluo"]
 texture = ExtResource("2_nof60")
-texture_margin_left = 7.4109035
+texture_margin_left = 7.4109
 region_rect = Rect2(26, 36, 6, 8)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_flluo"]
@@ -49,7 +49,7 @@ region_rect = Rect2(42, 36, 6, 8)
 [sub_resource type="LabelSettings" id="LabelSettings_fia0a"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_urwa6"]
@@ -66,7 +66,7 @@ region_rect = Rect2(25, 48, 6, 8)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_jj8q7"]
 texture = ExtResource("2_nof60")
-region_rect = Rect2(41.000374, 49, 5.999626, 8)
+region_rect = Rect2(41.0004, 49, 5.99963, 8)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v8md7"]
 
@@ -83,13 +83,13 @@ region_rect = Rect2(41.000374, 49, 5.999626, 8)
 [sub_resource type="LabelSettings" id="LabelSettings_w388w"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_rte6o"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0r38v"]
@@ -123,7 +123,7 @@ region_rect = Rect2(84, 49, 7, 8)
 [sub_resource type="LabelSettings" id="LabelSettings_8mxxh"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0gkbd"]
@@ -163,13 +163,13 @@ region_rect = Rect2(85, 36, 11, 12)
 [sub_resource type="LabelSettings" id="LabelSettings_8614w"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_q75lb"]
 font = ExtResource("6_w388w")
 shadow_size = 0
-shadow_color = Color(0, 0, 0, 0.40392157)
+shadow_color = Color(0, 0, 0, 0.403922)
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_w8tfo"]
@@ -250,7 +250,7 @@ player = NodePath("CenterContainer/VBoxContainer/CharacterEditor/CenterContainer
 
 [node name="Screenshot" type="Sprite2D" parent="."]
 position = Vector2(959.5, 540)
-scale = Vector2(0.25052086, 0.25555554)
+scale = Vector2(0.250521, 0.255556)
 texture = ExtResource("2_w388w")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
@@ -612,9 +612,9 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_placeholder_color = Color(0.827451, 0.6509804, 0.48235294, 1)
+theme_override_colors/font_placeholder_color = Color(0.827451, 0.65098, 0.482353, 1)
 theme_override_colors/caret_color = Color(1, 1, 1, 1)
-theme_override_colors/selection_color = Color(0.5019608, 0.5019608, 0.5019608, 0)
+theme_override_colors/selection_color = Color(0.501961, 0.501961, 0.501961, 0)
 theme_override_constants/minimum_character_width = 3
 theme_override_fonts/font = ExtResource("6_w388w")
 theme_override_font_sizes/font_size = 16

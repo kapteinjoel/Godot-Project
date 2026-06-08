@@ -209,7 +209,7 @@ func _physics_process(delta: float):
 	var direction := Vector2.ZERO
 	direction.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
 	direction.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
-
+	get_viewport().set_input_as_handled()
 	if direction != Vector2.ZERO:
 		direction = direction.normalized()
 

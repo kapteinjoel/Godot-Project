@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="All_For_Naught"
 config/version="1.0.0"
-run/main_scene="uid://bi3aihtq38cfg"
+run/main_scene="res://scenes/menus/game_controller.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -96,7 +96,7 @@ common/physics_interpolation=true
 
 textures/canvas_textures/default_texture_filter=0
 viewport/hdr_2d=true
-environment/defaults/default_clear_color=Color(0.08468992, 0.08468994, 0.08468989, 1)
+environment/defaults/default_clear_color=Color(0.0846899, 0.0846899, 0.0846899, 1)
 2d/snap/snap_2d_vertices_to_pixel=true
 
 [steam]

@@ -15,12 +15,12 @@ shader_parameter/strengthScale = 30000.0
 shader_parameter/interval = 0.0
 shader_parameter/detail = 1.0
 shader_parameter/distortion = 0.0
-shader_parameter/heightOffset = 0.990000047025
+shader_parameter/heightOffset = 0.99
 shader_parameter/offset = 1.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_krfg8"]
 atlas = ExtResource("1_vc3hi")
-region = Rect2(222.77528, 0.022547722, 51.50859, 80.31201)
+region = Rect2(222.775, 0.0225477, 51.5086, 80.312)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h4wek"]
 shader = ExtResource("1_h4wek")
@@ -31,12 +31,12 @@ shader_parameter/strengthScale = 30000.0
 shader_parameter/interval = 0.0
 shader_parameter/detail = 1.0
 shader_parameter/distortion = 0.0
-shader_parameter/heightOffset = 0.990000047025
+shader_parameter/heightOffset = 0.99
 shader_parameter/offset = 1.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2hx86"]
 atlas = ExtResource("3_oc5be")
-region = Rect2(158.83856, -0.07170105, 49.13846, 70.26529)
+region = Rect2(158.839, -0.071701, 49.1385, 70.2653)
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_oc5be")
@@ -51,7 +51,7 @@ position = Vector2(-1, 4)
 texture = SubResource("AtlasTexture_krfg8")
 centered = false
 offset = Vector2(-25, -79)
-region_rect = Rect2(-0.03964615, -0.84230614, 79.980515, 81.41899)
+region_rect = Rect2(-0.0396461, -0.842306, 79.9805, 81.419)
 
 [node name="Shadow" type="Sprite2D" parent="Tree"]
 z_index = 6
@@ -66,7 +66,7 @@ z_index = 1
 z_as_relative = false
 material = SubResource("ShaderMaterial_oc5be")
 position = Vector2(1, 0)
-rotation = 3.1415927
+rotation = 3.14159
 texture = SubResource("AtlasTexture_krfg8")
 centered = false
 offset = Vector2(-24, -64)
