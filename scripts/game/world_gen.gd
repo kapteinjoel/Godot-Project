@@ -21,6 +21,13 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
+# Diagnostic-only TileMap growth tests. Disabled by default for normal gameplay.
+@export var debug_tilemap_growth: bool = false
+@export var debug_use_fake_chunk_center: bool = false
+@export var debug_fake_chunk_steps_per_second: float = 5.0
+@export var debug_force_tilemap_update_after_clear: bool = false
+# Diagnostic-only: remaps fake-center TileMap writes into a bounded display window.
+@export var debug_use_fixed_tilemap_window: bool = false
 
 var temperature := FastNoiseLite.new()
 var moisture := FastNoiseLite.new()
@@ -44,6 +51,11 @@ var chunks_requiring_direct_update: Dictionary = {}
 var pending_terrain_updates: Array = []
 var current_change_set = null
 var active_change_sets: Array = []
+var _debug_fake_center_chunk := Vector2i.ZERO
+var _debug_fake_chunk_step_accum := 0.0
+var _debug_growth_print_accum := 0.0
+var _debug_fixed_chunk_slots: Dictionary = {}
+var _debug_fixed_slot_chunks: Dictionary = {}
 
 # The tilemap layer for the player to edit tiles at
 var players_layer_index := 9
@@ -243,8 +255,7 @@ func _ready() -> void:
 		
 func _process(_delta: float) -> void:
 	#print(active_change_sets.size())
-	var center := get_player_tile_coords()
-	var center_chunk := get_chunk_coords(center)
+	var center_chunk := get_debug_or_player_center_chunk(_delta)
 	
 	load_chunks_around(center_chunk)
 	unload_far_chunks(center_chunk)
@@ -261,6 +272,66 @@ func _process(_delta: float) -> void:
 	if active_change_sets.is_empty():
 		pass
 		#_flush_terrain_updates()
+
+	if debug_tilemap_growth:
+		_debug_growth_print_accum += _delta
+		if _debug_growth_print_accum >= 1.0:
+			_debug_growth_print_accum = fmod(_debug_growth_print_accum, 1.0)
+			print_tilemap_growth_debug(center_chunk)
+
+func get_debug_or_player_center_chunk(delta: float) -> Vector2i:
+	if debug_use_fake_chunk_center:
+		advance_debug_fake_center_chunk(delta)
+		return _debug_fake_center_chunk
+
+	var center := get_player_tile_coords()
+	return get_chunk_coords(center)
+
+func advance_debug_fake_center_chunk(delta: float) -> void:
+	if debug_fake_chunk_steps_per_second <= 0.0:
+		return
+
+	_debug_fake_chunk_step_accum += delta * debug_fake_chunk_steps_per_second
+	var whole_steps := int(floor(_debug_fake_chunk_step_accum))
+	if whole_steps <= 0:
+		return
+
+	_debug_fake_center_chunk.x += whole_steps
+	_debug_fake_chunk_step_accum -= float(whole_steps)
+
+func print_tilemap_growth_debug(center_chunk: Vector2i) -> void:
+	var layer_counts := PackedStringArray()
+	var total_used_cells := 0
+
+	for layer_name in Layers.keys():
+		var layer_index: int = Layers[layer_name]
+		var used_cells := tilemap.get_used_cells(layer_index).size()
+		total_used_cells += used_cells
+		layer_counts.append("%s:%d" % [layer_name, used_cells])
+
+	var memory_counts := PackedStringArray()
+	memory_counts.append("MEMORY_STATIC:%d" % int(Performance.get_monitor(Performance.MEMORY_STATIC)))
+	memory_counts.append("MEMORY_STATIC_MAX:%d" % int(Performance.get_monitor(Performance.MEMORY_STATIC_MAX)))
+	memory_counts.append("MEMORY_MESSAGE_BUFFER_MAX:%d" % int(Performance.get_monitor(Performance.MEMORY_MESSAGE_BUFFER_MAX)))
+	memory_counts.append("RENDER_VIDEO_MEM_USED:%d" % int(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)))
+	memory_counts.append("RENDER_TEXTURE_MEM_USED:%d" % int(Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)))
+	memory_counts.append("RENDER_BUFFER_MEM_USED:%d" % int(Performance.get_monitor(Performance.RENDER_BUFFER_MEM_USED)))
+
+	print(
+		"[TileMapGrowth] center_chunk=", center_chunk,
+		" fake_center=", debug_use_fake_chunk_center,
+		" fixed_window=", _use_debug_fixed_tilemap_window(),
+		" generated_chunks=", generated_chunks.size(),
+		" chunk_size=", chunk_size,
+		" view_distance=", view_distance,
+		" layer_used={", ", ".join(layer_counts), "}",
+		" total_used_cells=", total_used_cells,
+		" used_rect=", tilemap.get_used_rect(),
+		" object_count=", int(Performance.get_monitor(Performance.OBJECT_COUNT)),
+		" memory={", ", ".join(memory_counts), "}",
+		" object_container_children=", object_container.get_child_count(),
+		" chunk_containers=", chunk_containers.size()
+	)
 
 func _enter_tree() -> void:
 	$Players/MultiplayerSpawner.spawned.connect(_on_player_spawned)
@@ -494,20 +565,111 @@ func unload_far_chunks(center_chunk: Vector2i):
 		generated_chunks.erase(chunk)
 		changed_tiles_by_chunk.erase(chunk)
 
+func _use_debug_fixed_tilemap_window() -> bool:
+	return debug_use_fixed_tilemap_window and debug_use_fake_chunk_center
+
+func _debug_tilemap_diagnostics_enabled() -> bool:
+	return debug_tilemap_growth or debug_use_fake_chunk_center or _use_debug_fixed_tilemap_window()
+
+func _positive_mod(value: int, modulus: int) -> int:
+	return ((value % modulus) + modulus) % modulus
+
+func _debug_fixed_tilemap_span() -> int:
+	return max(1, (view_distance + 2) * 2 + 1)
+
+func _debug_slot_is_available(slot: Vector2i, chunk_coords: Vector2i) -> bool:
+	if not _debug_fixed_slot_chunks.has(slot):
+		return true
+	var existing_chunk: Vector2i = _debug_fixed_slot_chunks[slot]
+	if existing_chunk == chunk_coords:
+		return true
+	if not generated_chunks.has(existing_chunk):
+		_debug_fixed_slot_chunks.erase(slot)
+		_debug_fixed_chunk_slots.erase(existing_chunk)
+		return true
+	return false
+
+func _assign_debug_fixed_tilemap_slot(chunk_coords: Vector2i) -> Vector2i:
+	if _debug_fixed_chunk_slots.has(chunk_coords):
+		return _debug_fixed_chunk_slots[chunk_coords]
+
+	var span := _debug_fixed_tilemap_span()
+	var base_slot := Vector2i(
+		_positive_mod(chunk_coords.x, span),
+		_positive_mod(chunk_coords.y, span)
+	)
+	var total_slots := span * span
+	var base_index := base_slot.y * span + base_slot.x
+
+	for offset in range(total_slots):
+		var slot_index := (base_index + offset) % total_slots
+		var slot := Vector2i(slot_index % span, int(slot_index / span))
+		if _debug_slot_is_available(slot, chunk_coords):
+			_debug_fixed_slot_chunks[slot] = chunk_coords
+			_debug_fixed_chunk_slots[chunk_coords] = slot
+			return slot
+
+	push_warning("No free debug TileMap slot for chunk %s" % [chunk_coords])
+	_debug_fixed_slot_chunks[base_slot] = chunk_coords
+	_debug_fixed_chunk_slots[chunk_coords] = base_slot
+	return base_slot
+
+func _get_tilemap_chunk_origin(chunk_coords: Vector2i) -> Vector2i:
+	if _use_debug_fixed_tilemap_window():
+		return _assign_debug_fixed_tilemap_slot(chunk_coords) * chunk_size
+	return chunk_coords * chunk_size
+
+func _get_tilemap_tile_coords(chunk_coords: Vector2i, world_tile_coords: Vector2i) -> Vector2i:
+	if not _use_debug_fixed_tilemap_window():
+		return world_tile_coords
+	var world_chunk_origin := chunk_coords * chunk_size
+	return _get_tilemap_chunk_origin(chunk_coords) + (world_tile_coords - world_chunk_origin)
+
+func _release_debug_fixed_tilemap_slot(chunk_coords: Vector2i) -> void:
+	if not _debug_fixed_chunk_slots.has(chunk_coords):
+		return
+	var slot: Vector2i = _debug_fixed_chunk_slots[chunk_coords]
+	_debug_fixed_chunk_slots.erase(chunk_coords)
+	if _debug_fixed_slot_chunks.get(slot) == chunk_coords:
+		_debug_fixed_slot_chunks.erase(slot)
+
+func _erase_cell_if_used(layer: int, coords: Vector2i) -> void:
+	if not _debug_tilemap_diagnostics_enabled():
+		tilemap.erase_cell(layer, coords)
+		return
+
+	if tilemap.get_cell_source_id(layer, coords) != -1:
+		tilemap.erase_cell(layer, coords)
+
+func _set_cell_if_changed(layer: int, coords: Vector2i, source_id: int, atlas_coords: Vector2i, alternative_tile: int = 0) -> void:
+	if not _debug_tilemap_diagnostics_enabled():
+		tilemap.set_cell(layer, coords, source_id, atlas_coords, alternative_tile)
+		return
+
+	if tilemap.get_cell_source_id(layer, coords) == source_id:
+		if tilemap.get_cell_atlas_coords(layer, coords) == atlas_coords:
+			if tilemap.get_cell_alternative_tile(layer, coords) == alternative_tile:
+				return
+
+	tilemap.set_cell(layer, coords, source_id, atlas_coords, alternative_tile)
+
 func clear_chunk(chunk_coords: Vector2i):
-	var start_x = chunk_coords.x * chunk_size
-	var start_y = chunk_coords.y * chunk_size
-	var area = Rect2i(start_x, start_y, chunk_size, chunk_size)
-	for x in range(area.position.x, area.position.x + area.size.x):
-		for y in range(area.position.y, area.position.y + area.size.y):
+	var tilemap_chunk_origin := _get_tilemap_chunk_origin(chunk_coords)
+	for x in range(chunk_size):
+		for y in range(chunk_size):
+			var tile_pos = tilemap_chunk_origin + Vector2i(x, y)
 			for layer in Layers.keys():
 				#BetterTerrain.set_cell(tilemap, Layers[layer], Vector2i(x, y), -1)
-				tilemap.erase_cell(Layers[layer], Vector2i(x, y))
+				_erase_cell_if_used(Layers[layer], tile_pos)
 	if chunk_containers.has(chunk_coords):
 		var container = chunk_containers[chunk_coords]
 		container.queue_free() # Deletes the container and all objects inside it
 		chunk_containers.erase(chunk_coords) # Remove from dictionary
-	tilemap.update_internals()
+	# Normal gameplay keeps the original update path. Diagnostic A/B tests can disable
+	# this because Godot batches TileMap updates and forced clears may amplify churn.
+	if not _debug_tilemap_diagnostics_enabled() or debug_force_tilemap_update_after_clear:
+		tilemap.update_internals()
+	_release_debug_fixed_tilemap_slot(chunk_coords)
 
 func clear_chunk_object_tiles(chunk_coords: Vector2i):
 	var chunk_origin = chunk_coords * chunk_size
@@ -539,6 +701,7 @@ func generate_chunk_new(chunk_coords: Vector2i):
 	for x in range(start_x, start_x + chunk_size):
 		for y in range(start_y, start_y + chunk_size):
 			var tile_pos = Vector2i(x, y)
+			var write_tile_pos := _get_tilemap_tile_coords(chunk_coords, tile_pos)
 			var temp = 2 * (abs(temperature.get_noise_2d(x, y)))
 			var moist = 2 * (abs(moisture.get_noise_2d(x, y)))
 			var alt = 2 * (abs(altitude.get_noise_2d(x, y)))
@@ -548,20 +711,20 @@ func generate_chunk_new(chunk_coords: Vector2i):
 			if alt < 0.2:
 				#generate_ocean(tile_pos, chunk_coords, alt)
 				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 			# === RIVER — checked before beach so it can cut through to ocean ===
 			elif is_river_tile(x, y, alt):
 				pass
 				#generate_river(tile_pos, chunk_coords)
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 			elif is_river_bank(x, y, alt):
 				pass
 				#generate_river_bank(tile_pos, chunk_coords)
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 			# === BEACH ===
 			elif between(alt, 0.2, 0.25):
 				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 				#BetterTerrain.set_cell(tilemap, Layers.SAND , tile_pos, Terrain.SAND)
 				#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
 			# === LAND ZONE ===
@@ -571,21 +734,21 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				var is_desert = temp > 0.7 and moist < 0.4
 				if is_plains:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 				elif is_autumn:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 				elif is_desert:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 				else:
 					pass
 					#generate_forest(tile_pos, chunk_coords)
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 			# === HIGH ALTITUDE FOREST ===
 			else:
 				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				_set_cell_if_changed(Layers.GROUND, write_tile_pos, 0, Vector2i(0, 0))
 				#generate_forest(tile_pos, chunk_coords)
 	# Update tiles changed by the player
 	return
