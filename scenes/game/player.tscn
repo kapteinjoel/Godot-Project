@@ -58,7 +58,7 @@ properties/1/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1_g2els")
-speed = 500
+speed = 200
 
 [node name="RunAnimationTimer" type="Timer" parent="."]
 
@@ -210,3 +210,4 @@ replication_config = SubResource("SceneReplicationConfig_3vq1g")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 visible = false
+zoom = Vector2(4, 4)

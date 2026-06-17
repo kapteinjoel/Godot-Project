@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 3 # How many chunks to render around the player
+@export var view_distance := 7 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -240,15 +240,25 @@ func _ready() -> void:
 		player.change_skin_color(Global.character_data.skin_color)
 		mob_manager.set_process(false)
 		set_process(true)
-		
+
+
 func _process(_delta: float) -> void:
 	#print(active_change_sets.size())
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
-	
+
+
+#region VisualCheck
+	# ------ Visual Check ------
+	# If the player has moved further than our view distance from the anchor, snap it back
+	var dist_x = abs(center_chunk.x - tilemap_anchor_chunk.x)
+	var dist_y = abs(center_chunk.y - tilemap_anchor_chunk.y)
+	if max(dist_x, dist_y) > view_distance:
+		_recenter_tilemap(center_chunk)
+	# -----------------------
+#endregion
 	load_chunks_around(center_chunk)
 	unload_far_chunks(center_chunk)
-	
 	for i in range(active_change_sets.size() - 1, -1, -1):
 		var change_set = active_change_sets[i]
 		
@@ -259,8 +269,7 @@ func _process(_delta: float) -> void:
 			
 	# Only clear and queue up new updates if ALL previous layer calculations are fully complete
 	if active_change_sets.is_empty():
-		pass
-		#_flush_terrain_updates()
+		_flush_terrain_updates()
 
 func _enter_tree() -> void:
 	$Players/MultiplayerSpawner.spawned.connect(_on_player_spawned)
@@ -327,7 +336,6 @@ func get_chunk_file_path(chunk_coords: Vector2i) -> String:
 func _flush_terrain_updates():
 	if pending_terrain_updates.is_empty():
 		return
-		
 	var merged: Rect2i = pending_terrain_updates[0]
 	for rect in pending_terrain_updates:
 		merged = merged.merge(rect)
@@ -335,25 +343,17 @@ func _flush_terrain_updates():
 	
 	for layer_index in LayersToUpdate.values():
 		var cells_to_update: Dictionary = {}
-		
-		# Godot's range() and Rect2i.end are exclusive, so we use <= to hit the final border tile
 		var x_start = merged.position.x
 		var x_end = merged.end.x
 		var y_start = merged.position.y
 		var y_end = merged.end.y
-		
 		for x in range(x_start, x_end + 1):
 			for y in range(y_start, y_end + 1):
-				var pos = Vector2i(x, y)
-				var cell_type = BetterTerrain.get_cell(tilemap, layer_index, pos)
-				
-				# --- THE FIX ---
-				# Only include the tile in the changeset if it actually contains a terrain type.
-				# If it's -1, skipping it prevents BetterTerrain from trying to autotile into the void.
+				var world_pos = Vector2i(x, y)
+				var display_pos = world_tile_to_display_tile(world_pos)
+				var cell_type = BetterTerrain.get_cell(tilemap, layer_index, display_pos)
 				if cell_type != -1:
-					cells_to_update[pos] = cell_type
-		
-		# Only create a changeset if we actually found tiles to update in this layer
+					cells_to_update[display_pos] = cell_type
 		if not cells_to_update.is_empty():
 			var new_set = BetterTerrain.create_terrain_changeset(tilemap, layer_index, cells_to_update)
 			if new_set != null:
@@ -500,22 +500,33 @@ func clear_chunk(chunk_coords: Vector2i):
 	var area = Rect2i(start_x, start_y, chunk_size, chunk_size)
 	for x in range(area.position.x, area.position.x + area.size.x):
 		for y in range(area.position.y, area.position.y + area.size.y):
+			#----------------------------------------------------------#
+			var world_pos = Vector2i(x, y)
+			var display_pos = world_tile_to_display_tile(world_pos)          # Converting coordinates!
 			for layer in Layers.keys():
-				#BetterTerrain.set_cell(tilemap, Layers[layer], Vector2i(x, y), -1)
-				tilemap.erase_cell(Layers[layer], Vector2i(x, y))
+				tilemap.erase_cell(Layers[layer], display_pos)              # And erasing display_pos
+			#---------------------------------------------------------#
 	if chunk_containers.has(chunk_coords):
 		var container = chunk_containers[chunk_coords]
-		container.queue_free() # Deletes the container and all objects inside it
-		chunk_containers.erase(chunk_coords) # Remove from dictionary
+		container.queue_free() 
+		chunk_containers.erase(chunk_coords) 
 	tilemap.update_internals()
+	
+	#------------------------For Debugging ------------------------#
+	var count := 0
+	for layer in Layers.keys():
+		count += tilemap.get_used_cells(Layers[layer]).size()
+		print("After clear total cells: ", count)
+	#------------------------For Debugging------------------------#
 
 func clear_chunk_object_tiles(chunk_coords: Vector2i):
 	var chunk_origin = chunk_coords * chunk_size
 	for x in range(chunk_size):
 		for y in range(chunk_size):
 			var tile_pos = chunk_origin + Vector2i(x, y)
-			if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, tile_pos) == Terrain.OBJECT_TILE:
-				tilemap.erase_cell(Layers.OBJECTTILE, tile_pos)
+			var display_pos = world_tile_to_display_tile(tile_pos)
+			if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, display_pos) == Terrain.OBJECT_TILE:
+				tilemap.erase_cell(Layers.OBJECTTILE, display_pos)
 
 func get_or_create_chunk_container(chunk_coords: Vector2i):
 	# If container already exists get it and skip the rest
@@ -531,6 +542,7 @@ func get_or_create_chunk_container(chunk_coords: Vector2i):
 	chunk_containers[chunk_coords] = container
 	return container
 
+
 func generate_chunk_new(chunk_coords: Vector2i):
 	if chunks_with_saved_data.has(chunk_coords):
 		load_chunk_changes(chunk_coords)
@@ -539,56 +551,55 @@ func generate_chunk_new(chunk_coords: Vector2i):
 	for x in range(start_x, start_x + chunk_size):
 		for y in range(start_y, start_y + chunk_size):
 			var tile_pos = Vector2i(x, y)
+
+			#--------------------VISUAL DRAWING POS-----------------------#
+			var display_pos = world_tile_to_display_tile(tile_pos) # Visual drawing position
+			#--------------------VISUAL DRAWING POS-----------------------#
+
 			var temp = 2 * (abs(temperature.get_noise_2d(x, y)))
 			var moist = 2 * (abs(moisture.get_noise_2d(x, y)))
 			var alt = 2 * (abs(altitude.get_noise_2d(x, y)))
 			var tile_seed = Global.world_data.seed + (tile_pos.x * 374761393) + (tile_pos.y * 668265263)
 			object_spawn_rng.seed = tile_seed
-			# === OCEAN ===
+			
+			
+		  #-------------------------------Changing "tile_pos" to "display_pos"-----------------------------------#
+
+											  # === OCEAN ===
 			if alt < 0.2:
-				#generate_ocean(tile_pos, chunk_coords, alt)
-				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
-			# === RIVER — checked before beach so it can cut through to ocean ===
+				generate_ocean(tile_pos, chunk_coords, alt)
+					   # === RIVER — checked before beach so it can cut through to ocean === #
 			elif is_river_tile(x, y, alt):
-				pass
-				#generate_river(tile_pos, chunk_coords)
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+				generate_river(tile_pos, chunk_coords)
 			elif is_river_bank(x, y, alt):
-				pass
-				#generate_river_bank(tile_pos, chunk_coords)
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
-			# === BEACH ===
+				generate_river_bank(tile_pos, chunk_coords)
+										  # === BEACH ===
 			elif between(alt, 0.2, 0.25):
-				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
-				#BetterTerrain.set_cell(tilemap, Layers.SAND , tile_pos, Terrain.SAND)
-				#BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
-			# === LAND ZONE ===
+				BetterTerrain.set_cell(tilemap, Layers.SAND , display_pos, Terrain.SAND)
+				BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
+									   # === LAND ZONE ===
 			elif between(alt, 0.25, 0.8):
 				var is_plains = between(moist, 0, 0.4) and between(temp, 0.2, 0.6)
 				var is_autumn = between(moist, 0.4, 0.9) and (temp > 0.6)
 				var is_desert = temp > 0.7 and moist < 0.4
 				if is_plains:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#
 				elif is_autumn:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#  
 				elif is_desert:
 					pass
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
+					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#
 				else:
-					pass
-					#generate_forest(tile_pos, chunk_coords)
-					tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
-			# === HIGH ALTITUDE FOREST ===
+					generate_forest(tile_pos, chunk_coords)
+
+
+								 # === HIGH ALTITUDE FOREST ===
+
 			else:
-				pass
-				tilemap.set_cell(Layers.GROUND, tile_pos, 0, Vector2i(0, 0))
-				#generate_forest(tile_pos, chunk_coords)
+				generate_forest(tile_pos, chunk_coords)
 	# Update tiles changed by the player
-	return
 	var changed_tiles_in_this_chunk: Dictionary = changed_tiles_by_chunk.get(chunk_coords, {})
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
@@ -598,21 +609,21 @@ func generate_chunk_new(chunk_coords: Vector2i):
 			continue
 		
 		var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
+		var display_pos = world_tile_to_display_tile(tile_pos) # Visual drawing position
 		var terrain_type = int(tile_data.get("terrain_type", Terrain.GRASS))
 		var saved_layer_index = int(tile_data.get("layer_index", players_layer_index))
-		BetterTerrain.set_cell(tilemap, saved_layer_index, tile_pos, terrain_type)
+		BetterTerrain.set_cell(tilemap, saved_layer_index, display_pos, terrain_type)
 		
 	if chunks_requiring_direct_update.has(chunk_coords):
-		var update_area = Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2)
+		var display_origin = world_tile_to_display_tile(Vector2i(start_x, start_y))
+		var update_area = Rect2i(display_origin.x - 1, display_origin.y - 1, chunk_size + 2, chunk_size + 2)
 		for layer in LayersToUpdate.keys():
 			BetterTerrain.update_terrain_area.call_deferred(tilemap, Layers[layer], update_area)
-		
-		# Clean up the tracker for this chunk since it's now updated
 		chunks_requiring_direct_update.erase(chunk_coords)
 	else:
 		# Use your optimized background thread changeset
-		#pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
-		pass
+		pending_terrain_updates.append(Rect2i(start_x - 1, start_y - 1, chunk_size + 2, chunk_size + 2))
+
 	
 	# load in placed objects
 	for key in changed_tiles_in_this_chunk.keys():
@@ -633,19 +644,21 @@ func between(val, start, end):
 		return true
 
 func generate_ocean(tile_pos, chunk_coords: Vector2i, alt):
-	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
-	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
-	BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
-	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
+	var display_pos = world_tile_to_display_tile(tile_pos)
+	BetterTerrain.set_cell(tilemap, Layers.SAND, display_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, display_pos, Terrain.WATER_MASK)
+	BetterTerrain.set_cell(tilemap, Layers.WATER, display_pos, Terrain.WATER)
+	BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.WATER_EDGE)
 	var depth = 1.0 - (alt / 0.2)
 	if depth > 0.6:
-		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER_MEDIUM)
+		BetterTerrain.set_cell(tilemap, Layers.WATER, display_pos, Terrain.WATER_MEDIUM)
 	else:
-		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
+		BetterTerrain.set_cell(tilemap, Layers.WATER, display_pos, Terrain.WATER)
 	
 func generate_river_bank(tile_pos, chunk_coords: Vector2i):
-	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
-	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
+	var display_pos = world_tile_to_display_tile(tile_pos)
+	BetterTerrain.set_cell(tilemap, Layers.SAND, display_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
 
 	var river_dist = get_tiles_from_river_center(tile_pos.x, tile_pos.y)
 	var bank_edge_threshold = RIVER_HALF_WIDTH + 3.0
@@ -670,13 +683,14 @@ func generate_river_bank(tile_pos, chunk_coords: Vector2i):
 	var in_grass_clump = between(grass_noise, 0.05, 0.10)
 	if in_grass_clump:
 		varieties = ["bank_grass_1", "bank_grass_2", "bank_grass_3", "bank_grass_4", "bank_grass_5"]
-		tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
+		tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[object_spawn_rng.randi() % varieties.size()]])
 	
 func generate_river(tile_pos, chunk_coords: Vector2i):
-	BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
-	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
-	BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
-	BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
+	var display_pos = world_tile_to_display_tile(tile_pos)
+	BetterTerrain.set_cell(tilemap, Layers.SAND, display_pos, Terrain.SAND)
+	BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, display_pos, Terrain.WATER_MASK)
+	BetterTerrain.set_cell(tilemap, Layers.WATER, display_pos, Terrain.WATER)
+	BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.WATER_EDGE)
 	var river_dist = get_tiles_from_river_center(tile_pos.x, tile_pos.y)
 	if river_dist > RIVER_HALF_WIDTH - 2.5:
 		return
@@ -698,16 +712,16 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 	
 	var roll = tile_hash(tile_pos, 2)
 	var variety_roll = tile_hash(tile_pos, 3)
-		
+	var display_pos = world_tile_to_display_tile(tile_pos) 
 	if detail_noise < -0.6 and density < -0.3: # PONDS
-		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
-		BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, tile_pos, Terrain.WATER_MASK)
-		BetterTerrain.set_cell(tilemap, Layers.WATER, tile_pos, Terrain.WATER)
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.WATER_EDGE)
+		BetterTerrain.set_cell(tilemap, Layers.SAND, display_pos, Terrain.SAND)
+		BetterTerrain.set_cell(tilemap, Layers.WATERSHADER, display_pos, Terrain.WATER_MASK)
+		BetterTerrain.set_cell(tilemap, Layers.WATER, display_pos, Terrain.WATER)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.WATER_EDGE)
 
 	elif between(detail_noise, -1.0, -0.5) and density < -0.25: # SAND / POND BORDERS
-		BetterTerrain.set_cell(tilemap, Layers.SAND, tile_pos, Terrain.SAND)
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
+		BetterTerrain.set_cell(tilemap, Layers.SAND, display_pos, Terrain.SAND)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
 		if between(detail_noise, -0.7, -0.57):
 			if between(roll, 0.2, 0.9):
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
@@ -722,7 +736,7 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 					new_plant.set_plant_type(varieties[int(variety_roll * varieties.size())])
 		elif between(detail_noise, -0.52, -0.5):
 			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
 			if roll < 0.3:
 				var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 				if new_plant != null:
@@ -730,8 +744,8 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 					new_plant.set_plant_type(varieties[int(tile_hash(tile_pos, 4) * varieties.size())])
 
 	elif between(detail_noise, 0.1, 0.3): # MATTED GRASS
-		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
+		BetterTerrain.set_cell(tilemap, Layers.GRASS, display_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
 		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
 			if new_plant != null:
@@ -749,11 +763,11 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 				new_tree.set_tree_type(new_tree.TREE_TYPE.PINE_LARGE_2)
 
 	elif between(detail_noise, 0.6, 0.7): # STONE MICRO BIOME
-		BetterTerrain.set_cell(tilemap, Layers.STONE, tile_pos, Terrain.STONE)
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
+		BetterTerrain.set_cell(tilemap, Layers.STONE, display_pos, Terrain.STONE)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
 		if between(detail_noise, 0.6, 0.63):
 			varieties = ["forest_ground_grass_1", "forest_ground_grass_2", "forest_ground_grass_3", "forest_ground_grass_4", "forest_ground_grass_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
 		if tile_hash(tile_pos, 5) > 0.95:
 			var container = spawn_object(tile_pos, chunk_coords, placeable)
 			if container != null:
@@ -761,23 +775,23 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 				container.object_type = container_types[int(tile_hash(tile_pos, 6) * container_types.size())]
 
 	else: # FOREST
-		BetterTerrain.set_cell(tilemap, Layers.GRASS, tile_pos, Terrain.MATTED_GRASS)
-		BetterTerrain.set_cell(tilemap, Layers.GROUND, tile_pos, Terrain.GROUND_PLACEHOLDER)
-		BetterTerrain.set_cell(tilemap, Layers.FLOOR, tile_pos, Terrain.GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GRASS, display_pos, Terrain.MATTED_GRASS)
+		BetterTerrain.set_cell(tilemap, Layers.GROUND, display_pos, Terrain.GROUND_PLACEHOLDER)
+		BetterTerrain.set_cell(tilemap, Layers.FLOOR, display_pos, Terrain.GRASS)
 		
 		# DECORATION FLOWERS
 		if between(secondary_detail_noise, 0.0, 0.05):
 			varieties = ["forest_flower_white_1", "forest_flower_white_2", "forest_flower_white_3", "forest_flower_white_4", "forest_flower_white_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(variety_roll * varieties.size())]])
 		if between(secondary_detail_noise, 0.2, 0.2075):
 			varieties = ["forest_flower_yellow_1", "forest_flower_yellow_2", "forest_flower_yellow_3", "forest_flower_yellow_4", "forest_flower_yellow_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 7) * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 7) * varieties.size())]])
 		if between(secondary_detail_noise, 0.4, 0.4075):
 			varieties = ["forest_flower_red_1", "forest_flower_red_2", "forest_flower_red_3", "forest_flower_red_4", "forest_flower_red_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 8) * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 8) * varieties.size())]])
 		if between(secondary_detail_noise, 0.6, 0.6075):
 			varieties = ["forest_flower_purple_1", "forest_flower_purple_2", "forest_flower_purple_3", "forest_flower_purple_4", "forest_flower_purple_5"]
-			tilemap.set_cell(Layers.FLOOR_DECOR, tile_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 9) * varieties.size())]])
+			tilemap.set_cell(Layers.FLOOR_DECOR, display_pos, 0, DECORATIONS[varieties[int(tile_hash(tile_pos, 9) * varieties.size())]])
 			
 		if between(roll, 0.5, 0.8):
 			var new_plant = spawn_object(tile_pos, chunk_coords, plant)
@@ -837,8 +851,8 @@ func get_tiles_from_river_center(x: int, y: int) -> float:
 	return center / max(gradient, 0.008)
 	
 func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: PackedScene, ignore_modified: bool = false):
-	return null
-	if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, tile_pos) == Terrain.OBJECT_TILE:
+	var display_pos = world_tile_to_display_tile(tile_pos)
+	if BetterTerrain.get_cell(tilemap, Layers.OBJECTTILE, display_pos) == Terrain.OBJECT_TILE:
 		return null
 	
 	if not ignore_modified:
@@ -854,7 +868,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	instance.tile_pos = tile_pos
 	container.add_child(instance)
 	
-	BetterTerrain.set_cell(tilemap, Layers.OBJECTTILE, tile_pos, Terrain.OBJECT_TILE)
+	BetterTerrain.set_cell(tilemap, Layers.OBJECTTILE, display_pos, Terrain.OBJECT_TILE)
 	
 	return instance
 
@@ -991,3 +1005,48 @@ func _on_player_spawned(node: Node):
 		print("Client: My local player is now assigned!")
 		set_process(true)
 		#mob_manager.set_process(true)
+
+
+#region HelperFunctions
+
+var tilemap_anchor_chunk := Vector2i.ZERO
+const TILE_SIZE_PIXELS := 16 # UPDATE THIS to your project's actual tile size in pixels
+
+# The helper functions to translate coordinates
+func world_tile_to_display_tile(world_pos: Vector2i) -> Vector2i:
+	return world_pos - (tilemap_anchor_chunk * chunk_size)
+
+func display_tile_to_world_tile(display_pos: Vector2i) -> Vector2i:
+	return display_pos + (tilemap_anchor_chunk * chunk_size)
+
+
+func _recenter_tilemap(new_center_chunk: Vector2i):
+	# 1. Clear the visual tilemap completely
+	tilemap.clear()
+
+	# 2. Update our mathematical anchor
+	tilemap_anchor_chunk = new_center_chunk
+
+	# 3. Physically move the TileMap node in the 2D world so the visual tiles still line up with the player
+	tilemap.global_position = Vector2(
+		tilemap_anchor_chunk.x * chunk_size * TILE_SIZE_PIXELS,
+		tilemap_anchor_chunk.y * chunk_size * TILE_SIZE_PIXELS
+	)
+
+			   # ---------------------------- Lag Fix: Blinking ------------------------------- #
+	
+	 #Drawing the map slightly early ex 1 frame .
+	if tilemap.has_method("reset_physics_interpolation"):
+		tilemap.reset_physics_interpolation()
+
+	for chunk in chunk_containers.keys():
+		chunk_containers[chunk].queue_free()
+	chunk_containers.clear()
+
+	#Redrawing all loaded chunks using the newly display coordinates.
+	for chunk in generated_chunks.keys():
+		generate_chunk_new(chunk)
+
+	# Forcing Godot's visual server to instantly rebuild the quadrant map before the frame hits the player's screen.
+	tilemap.update_internals()
+#endregion
