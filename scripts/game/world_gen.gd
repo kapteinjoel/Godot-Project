@@ -17,7 +17,7 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
-@export var view_distance := 7 # How many chunks to render around the player
+@export var view_distance := 5 # How many chunks to render around the player
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
@@ -34,7 +34,7 @@ var ts = null
 var terrain = null
 var object_spawn_rng = RandomNumberGenerator.new()
 var use_changeset = true
-
+var layers_array = {}
 
 var generated_chunks := {} # Stores already generated chunks
 var chunk_containers = {} # Used to tie objects to their respective chunk
@@ -190,7 +190,7 @@ func _ready() -> void:
 	#ts = tilemap.tile_set
 	#terrain = BetterTerrain.get_terrain(ts, Terrain.SAND)
 	#original_cats = terrain.categories.duplicate()
-	
+	layers_array = Layers.values()
 	# Load in tiles changed by the player
 	if Global.world_data.has("changed_tiles_by_chunk"):
 		changed_tiles_by_chunk = Global.world_data.changed_tiles_by_chunk
@@ -229,7 +229,7 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
-	#load_saved_chunk_index() 
+	load_saved_chunk_index() 
 	
 	if multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
@@ -253,7 +253,7 @@ func _process(_delta: float) -> void:
 	# If the player has moved further than our view distance from the anchor, snap it back
 	var dist_x = abs(center_chunk.x - tilemap_anchor_chunk.x)
 	var dist_y = abs(center_chunk.y - tilemap_anchor_chunk.y)
-	if max(dist_x, dist_y) > view_distance:
+	if max(dist_x, dist_y) > view_distance and active_change_sets.is_empty():
 		_recenter_tilemap(center_chunk)
 	# -----------------------
 #endregion
@@ -450,39 +450,35 @@ func get_chunk_coords(tile_coords: Vector2i) -> Vector2i:
 		floor(float(tile_coords.y) / chunk_size)
 	)
 	
-func load_chunks_around(center_chunk: Vector2i):
+func load_chunks_around(center_chunk: Vector2i, force_all: bool = false):
 	# Iterate in a spiral pattern from the center outwards
 	for r in range(view_distance + 1):
 		for i in range(-r, r + 1):
 			# Top and bottom edges of the spiral ring
 			var top_chunk = center_chunk + Vector2i(i, -r)
 			if not generated_chunks.has(top_chunk):
-				#generate_chunk(top_chunk)
 				generate_chunk_new(top_chunk)
 				generated_chunks[top_chunk] = true
-				return # <- Exit after generating one chunk
+				if not force_all: return # <- Skip exit if forcing all
 
 			var bottom_chunk = center_chunk + Vector2i(i, r)
 			if not generated_chunks.has(bottom_chunk):
-				#generate_chunk(bottom_chunk)
 				generate_chunk_new(bottom_chunk)
 				generated_chunks[bottom_chunk] = true
-				return # <- Exit after generating one chunk
+				if not force_all: return # <- Skip exit if forcing all
 
 			# Left and right edges of the spiral ring
 			var left_chunk = center_chunk + Vector2i(-r, i)
 			if not generated_chunks.has(left_chunk):
-				#generate_chunk(left_chunk)
 				generate_chunk_new(left_chunk)
 				generated_chunks[left_chunk] = true
-				return # <- Exit after generating one chunk
+				if not force_all: return # <- Skip exit if forcing all
 				
 			var right_chunk = center_chunk + Vector2i(r, i)
 			if not generated_chunks.has(right_chunk):
-				#generate_chunk(right_chunk)
 				generate_chunk_new(right_chunk)
 				generated_chunks[right_chunk] = true
-				return # <- Exit after generating one chunk
+				if not force_all: return # <- Skip exit if forcing all
 
 func unload_far_chunks(center_chunk: Vector2i):
 	var keys_to_remove := []
@@ -873,7 +869,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	return instance
 
 func stamp_house(origin: Vector2i, blueprint: Array):
-	return false
+	
 	if blueprint.is_empty():
 		return false
 	var first_entry = blueprint[0]
@@ -922,14 +918,10 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 		var start_y = chunk_coords.y * chunk_size
 		var chunk_box = Rect2i(start_x, start_y, chunk_size, chunk_size)
 		
-		# Cancel any queued up flushes waiting for this area
-		cancel_pending_updates_in_area(chunk_box)
+		#cancel_pending_updates_in_area(chunk_box)
 		if generated_chunks.has(chunk_coords):
+			clear_chunk(chunk_coords)
 			generated_chunks.erase(chunk_coords)
-			if chunk_containers.has(chunk_coords):
-				chunk_containers[chunk_coords].queue_free()
-				chunk_containers.erase(chunk_coords)
-				clear_chunk_object_tiles(chunk_coords)
 	return true
 	
 func wants_to_be_tree(tile_pos: Vector2i) -> bool:
@@ -1021,32 +1013,45 @@ func display_tile_to_world_tile(display_pos: Vector2i) -> Vector2i:
 
 
 func _recenter_tilemap(new_center_chunk: Vector2i):
-	# 1. Clear the visual tilemap completely
-	tilemap.clear()
-
-	# 2. Update our mathematical anchor
+	var chunk_offset = new_center_chunk - tilemap_anchor_chunk
+	var tile_offset = chunk_offset * chunk_size
+	
+	# 1. Update our mathematical anchor
 	tilemap_anchor_chunk = new_center_chunk
 
-	# 3. Physically move the TileMap node in the 2D world so the visual tiles still line up with the player
-	tilemap.global_position = Vector2(
-		tilemap_anchor_chunk.x * chunk_size * TILE_SIZE_PIXELS,
-		tilemap_anchor_chunk.y * chunk_size * TILE_SIZE_PIXELS
+	# 2. Shift the physical TileMap node forward
+	var pixel_offset = Vector2(
+		chunk_offset.x * chunk_size * TILE_SIZE_PIXELS,
+		chunk_offset.y * chunk_size * TILE_SIZE_PIXELS
 	)
+	tilemap.global_position += pixel_offset
 
-			   # ---------------------------- Lag Fix: Blinking ------------------------------- #
+	# 3. Correctly grab, erase, and replace cells to shift them backwards
 	
-	 #Drawing the map slightly early ex 1 frame .
+	
+	# To prevent overwriting data as we shift, grab all current cells first
+	var cells_to_move: Dictionary = {} # layer_id -> Array of [new_pos, source_id, atlas_coords, alt_tile]
+
+	for layer_id in layers_array:
+		var used_cells = tilemap.get_used_cells(layer_id)
+		var moved_cells = []
+		moved_cells.resize(used_cells.size())
+		for i in range(used_cells.size()):
+			var cell_pos = used_cells[i]
+			moved_cells[i] = [
+				cell_pos - tile_offset,
+				tilemap.get_cell_source_id(layer_id, cell_pos),
+				tilemap.get_cell_atlas_coords(layer_id, cell_pos),
+				tilemap.get_cell_alternative_tile(layer_id, cell_pos)
+			]
+		cells_to_move[layer_id] = moved_cells
+
+	tilemap.clear()
+
+	for layer_id in layers_array:
+		for cell in cells_to_move[layer_id]:
+			tilemap.set_cell(layer_id, cell[0], cell[1], cell[2], cell[3])
+
+	# 6. Smooth out camera interpolation jumps
 	if tilemap.has_method("reset_physics_interpolation"):
 		tilemap.reset_physics_interpolation()
-
-	for chunk in chunk_containers.keys():
-		chunk_containers[chunk].queue_free()
-	chunk_containers.clear()
-
-	#Redrawing all loaded chunks using the newly display coordinates.
-	for chunk in generated_chunks.keys():
-		generate_chunk_new(chunk)
-
-	# Forcing Godot's visual server to instantly rebuild the quadrant map before the frame hits the player's screen.
-	tilemap.update_internals()
-#endregion
