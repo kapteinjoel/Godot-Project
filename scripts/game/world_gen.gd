@@ -255,6 +255,7 @@ func _process(_delta: float) -> void:
 	var dist_y = abs(center_chunk.y - tilemap_anchor_chunk.y)
 	if max(dist_x, dist_y) > view_distance and active_change_sets.is_empty():
 		_recenter_tilemap(center_chunk)
+		return
 	# -----------------------
 #endregion
 	load_chunks_around(center_chunk)
@@ -1025,6 +1026,7 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 		chunk_offset.y * chunk_size * TILE_SIZE_PIXELS
 	)
 	tilemap.global_position += pixel_offset
+	tilemap.set_notify_transform(true)
 
 	# 3. Correctly grab, erase, and replace cells to shift them backwards
 	
@@ -1046,7 +1048,10 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 			]
 		cells_to_move[layer_id] = moved_cells
 
-	tilemap.clear()
+	for layer_id in layers_array:
+		var used_cells = tilemap.get_used_cells(layer_id)
+		for cell_pos in used_cells:
+			tilemap.set_cell(layer_id, cell_pos, -1) # Fast erase individual cell
 
 	for layer_id in layers_array:
 		for cell in cells_to_move[layer_id]:
