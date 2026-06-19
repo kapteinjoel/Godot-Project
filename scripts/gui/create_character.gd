@@ -17,7 +17,7 @@ var current_health = 100
 var mana = 100
 var speed = 200
 var critical_strike_chance = 0
-var inventory = {}
+var inventory = []
 
 func _ready():
 	skin_color_picker.color = Color(0, 0, 0, 0)

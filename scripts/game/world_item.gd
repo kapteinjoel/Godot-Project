@@ -4,6 +4,8 @@ extends Node2D
 var item_id: String = ""
 var count: int = 1
 var tile_pos: Vector2i
+signal picked_up(tile_pos: Vector2i)
+var can_pickup := false
 
 @onready var sprite := $Sprite2D
 
@@ -22,11 +24,21 @@ func setup(id: String, amount: int = 1) -> void:
 
 func _ready() -> void:
 	$PickupArea.body_entered.connect(_on_body_entered)
+	# Prevent immediate re-pickup after dropping
+	await get_tree().create_timer(0.8).timeout
+	can_pickup = true
+
 
 func _on_body_entered(body: Node2D) -> void:
+	if not can_pickup:
+		return
 	if body.is_in_group("player") and body.is_multiplayer_authority():
 		var leftover = body.pickup_item(item_id, count)
 		if leftover == 0:
+			picked_up.emit(tile_pos)
 			queue_free()
 		else:
-			count = leftover  # inventory was full, leave remainder
+			count = leftover
+			var world_gen = get_tree().get_first_node_in_group("world_gen")
+			if world_gen:
+				world_gen.save_world_item_to_chunk(tile_pos, item_id, count)

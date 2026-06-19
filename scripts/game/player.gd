@@ -131,6 +131,9 @@ func _ready():
 	if Global.character_data.has("eye_color"):
 		change_eye_color(Color(Global.character_data.eye_color))
 		print(Global.character_data.eye_color)
+	if Global.character_data.has("inventory") and Global.character_data["inventory"] is Array:
+		inventory = Global.character_data["inventory"].duplicate(true)
+		inventory_changed.emit(inventory)
 
 	_on_eye_dart_timer_timeout()
 	
@@ -138,7 +141,22 @@ func dict_to_color(d) -> Color:
 	if d is Color:
 		return d  # already a Color, no conversion needed
 	return Color(d["r"], d["g"], d["b"], d.get("a", 1.0))
+
+func save_inventory() -> void:
+	Global.character_data["inventory"] = inventory
+	var char_name = Global.character_data["name"].strip_edges().replace(" ", "_").to_lower()
+	var file_path = "user://characters/" + char_name + ".json"
+	var temp_path = file_path + ".tmp"
+	print("Saving inventory to: ", file_path, " items: ", inventory.size())
+	var file = FileAccess.open(temp_path, FileAccess.WRITE)
+	if file == null:
+		push_error("Could not save inventory for: " + char_name)
+		return
+	file.store_string(JSON.stringify(Global.character_data, "  "))
+	file.close()
 	
+	DirAccess.rename_absolute(temp_path, file_path)
+
 func _process(_delta):
 	if not is_multiplayer_authority():
 		$Camera2D.enabled = false
@@ -300,19 +318,41 @@ func pickup_item(item_id: String, count: int) -> int:
 	if item_data.is_empty():
 		return count
 	var remaining = count
-	# Fill existing stacks first
 	for slot in inventory:
-		if slot.item_id == item_id:
-			var space = item_data.max_stack_size - slot.count
+		if slot["item_id"] == item_id:
+			var space = item_data["max_stack_size"] - slot["count"]
 			var added = min(space, remaining)
-			slot.count += added
+			slot["count"] += added
 			remaining -= added
 			if remaining == 0:
-				return 0
-	# Then open slots
+				inventory_changed.emit(inventory)
+				return 0  # emit BEFORE returning
 	while remaining > 0 and inventory.size() < inventory_size:
-		var stack = min(remaining, item_data.max_stack_size)
+		var stack = min(remaining, item_data["max_stack_size"])
 		inventory.append({ "item_id": item_id, "count": stack })
 		remaining -= stack
 	inventory_changed.emit(inventory)
 	return remaining
+
+func drop_item(slot_index: int) -> void:
+	if slot_index >= inventory.size():
+		return
+	var slot = inventory[slot_index]
+	var tile_pos = get_tile_pos()  # however you get the player's current tile
+	var world_gen = get_tree().get_first_node_in_group("world_gen")
+	if world_gen:
+		world_gen.drop_item_at(tile_pos, slot.item_id, slot.count)
+	inventory.remove_at(slot_index)
+	inventory_changed.emit(inventory)
+
+func get_tile_pos() -> Vector2i:
+	return Vector2i(floori(global_position.x / 16.0), floori(global_position.y / 16.0))
+	
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_multiplayer_authority():
+		return
+	if event.is_action_pressed("drop_item"):
+		print('fired')
+		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+		if inventory_ui:
+			drop_item(inventory_ui.selected_slot)

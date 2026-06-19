@@ -21,6 +21,8 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 @export var tree: PackedScene = preload("res://scenes/game/worldgen/tree.tscn")
 @export var plant: PackedScene = preload("res://scenes/game/worldgen/plant.tscn")
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
+@export var world_item_scene: PackedScene = preload("res://scenes/game/worlditem.tscn")
+
 
 var temperature := FastNoiseLite.new()
 var moisture := FastNoiseLite.new()
@@ -242,8 +244,10 @@ func _ready() -> void:
 		# Spawn the host (you)
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
-		var inventory_ui = get_node("../UI/HUD/InventoryAndHotbar")
-		player.inventory_changed.connect(inventory_ui.refresh)
+		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+		if inventory_ui:
+			player.inventory_changed.connect(inventory_ui.refresh)
+			inventory_ui.refresh(player.inventory)
 		mob_manager.set_process(false)
 		set_process(true)
 	
@@ -296,7 +300,9 @@ func _on_save_timer_timeout() -> void:
 	for chunk_coords in dirty_chunks.keys():
 		save_chunk_changes(chunk_coords)
 	dirty_chunks.clear()
-	
+	if is_instance_valid(player) and player.has_method("save_inventory"):
+		player.save_inventory()
+
 func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_type: int):
 	var chunk_coords = get_chunk_coords(tile_coords)
 	if not changed_tiles_by_chunk.has(chunk_coords):
@@ -398,7 +404,29 @@ func load_saved_chunk_index() -> void:
 				chunks_with_saved_data[coords] = true
 		file_name = dir.get_next()
 	dir.list_dir_end()
-	
+
+func remove_world_item_from_chunk(tile_pos: Vector2i) -> void:
+	var chunk_coords = get_chunk_coords(tile_pos)
+	if not changed_tiles_by_chunk.has(chunk_coords):
+		return
+	var key = str(tile_pos.x, ",", tile_pos.y, "_world_item")
+	changed_tiles_by_chunk[chunk_coords].erase(key)
+	dirty_chunks[chunk_coords] = true
+
+func save_world_item_to_chunk(tile_pos: Vector2i, item_id: String, count: int) -> void:
+	var chunk_coords = get_chunk_coords(tile_pos)
+	if not changed_tiles_by_chunk.has(chunk_coords):
+		changed_tiles_by_chunk[chunk_coords] = {}
+	var key = str(tile_pos.x, ",", tile_pos.y, "_world_item")
+	changed_tiles_by_chunk[chunk_coords][key] = {
+		"type": "world_item",
+		"item_id": item_id,
+		"count": count,
+		"x": tile_pos.x,
+		"y": tile_pos.y
+	}
+	dirty_chunks[chunk_coords] = true
+
 func save_object_to_chunk(tile_pos: Vector2i, object_id: String, object_data: Dictionary = {}):
 	var chunk_coords = get_chunk_coords(tile_pos)
 	if not changed_tiles_by_chunk.has(chunk_coords):
@@ -412,6 +440,17 @@ func save_object_to_chunk(tile_pos: Vector2i, object_id: String, object_data: Di
 		"y": tile_pos.y
 	}
 	dirty_chunks[chunk_coords] = true
+
+func drop_item_at(tile_pos: Vector2i, item_id: String, count: int) -> void:
+	save_world_item_to_chunk(tile_pos, item_id, count)
+	var chunk_coords = get_chunk_coords(tile_pos)
+	var container = get_or_create_chunk_container(chunk_coords)
+	var instance = world_item_scene.instantiate()
+	instance.position = tilemap.map_to_local(tile_pos)
+	instance.tile_pos = tile_pos
+	container.add_child(instance)
+	instance.setup(item_id, count)
+	instance.picked_up.connect(remove_world_item_from_chunk)
 
 func save_chunk_changes(chunk_coords: Vector2i) -> void:
 	if not changed_tiles_by_chunk.has(chunk_coords):
@@ -638,6 +677,18 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				var object_data = tile_data.get("object_data", {})
 				if OBJECT_SETUP_FNS.has(object_id):
 					OBJECT_SETUP_FNS[object_id].call(instance, object_data)
+					
+	for key in changed_tiles_in_this_chunk.keys():
+		var tile_data = changed_tiles_in_this_chunk[key]
+		if tile_data.get("type", "") == "world_item":
+			var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
+			var instance = world_item_scene.instantiate()
+			var container = get_or_create_chunk_container(chunk_coords)
+			instance.position = tilemap.map_to_local(tile_pos)
+			instance.tile_pos = tile_pos
+			container.add_child(instance)
+			instance.setup(tile_data.get("item_id", ""), int(tile_data.get("count", 1)))
+			instance.picked_up.connect(remove_world_item_from_chunk)
 	# After All generation is done reload past mobs
 	#get_node("MobManager").load_mobs_for_chunk(chunk_coords)
 		
@@ -813,7 +864,7 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 					new_tree.set_tree_type(new_tree.TREE_TYPE.OAK_LARGE_2)
 					
 		if roll < 0.005 and between(detail_noise, -0.1, 0.1):
-			if stamp_house(tile_pos, HOUSE_1):
+			if stamp_structure(tile_pos, HOUSE_1):
 				return
 					
 func get_river_value(x: int, y: int) -> float:
@@ -874,7 +925,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	
 	return instance
 
-func stamp_house(origin: Vector2i, blueprint: Array):
+func stamp_structure(origin: Vector2i, blueprint: Array):
 	
 	if blueprint.is_empty():
 		return false
@@ -992,17 +1043,15 @@ func _on_peer_disconnected(id: int):
 		players_container.get_node(str(id)).queue_free()
 
 func _on_player_spawned(node: Node):
-	# This runs on EVERYONE whenever a new player node is replicated
 	var id = node.name.to_int()
 	node.set_multiplayer_authority(id)
-	print('test')
-	# This is where the client finally assigns THEIR own player variable
 	if id == multiplayer.get_unique_id():
 		player = node
-		print("Client: My local player is now assigned!")
 		set_process(true)
-		var inventory_ui = get_node("../UI/HUD/InventoryAndHotbar")
-		player.inventory_changed.connect(inventory_ui.refresh)
+		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+		if inventory_ui:
+			player.inventory_changed.connect(inventory_ui.refresh)
+			inventory_ui.refresh(player.inventory)
 		#mob_manager.set_process(true)
 
 
