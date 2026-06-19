@@ -1,0 +1,5 @@
+{
+	"WOOD_LOG": { "display_name": "Wood Log", "max_stack_size": 64, "icon_x": 0, "icon_y": 0 },
+	"STONE": { "display_name": "Stone", "max_stack_size": 64, "icon_x": 16, "icon_y": 0 },
+	"IRON_ORE": { "display_name": "Iron Ore", "max_stack_size": 32, "icon_x": 32, "icon_y": 0 }
+}

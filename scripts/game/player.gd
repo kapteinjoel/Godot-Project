@@ -19,6 +19,10 @@ extends CharacterBody2D
 @onready var body := $PlayerBody
 @onready var reflection := $PlayerReflection/PlayerBody2
 
+var inventory: Array = []  # [{ "item_id": "WOOD_LOG", "count": 5 }, ...]
+var inventory_size = 24
+signal inventory_changed(new_inventory: Array)
+
 # --- Animation Variables ---
 enum RunDir { LEFT, RIGHT, UP, DOWN }
 @export var current_run_dir: RunDir = RunDir.RIGHT
@@ -209,15 +213,11 @@ func _physics_process(delta: float):
 	var direction := Vector2.ZERO
 	direction.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
 	direction.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
-	get_viewport().set_input_as_handled()
 	if direction != Vector2.ZERO:
 		direction = direction.normalized()
 
 	velocity = direction * speed
 	move_and_slide()
-	#global_position += velocity * delta
-	
-	#global_position = global_position.round()
 
 
 func get_run_frames() -> Array:
@@ -294,3 +294,25 @@ func change_hair_color(new_color: Color):
 	
 func change_eye_color(new_color: Color):
 	eye_sprite.modulate = new_color
+
+func pickup_item(item_id: String, count: int) -> int:
+	var item_data = ItemRegistry.get_item(item_id)
+	if item_data.is_empty():
+		return count
+	var remaining = count
+	# Fill existing stacks first
+	for slot in inventory:
+		if slot.item_id == item_id:
+			var space = item_data.max_stack_size - slot.count
+			var added = min(space, remaining)
+			slot.count += added
+			remaining -= added
+			if remaining == 0:
+				return 0
+	# Then open slots
+	while remaining > 0 and inventory.size() < inventory_size:
+		var stack = min(remaining, item_data.max_stack_size)
+		inventory.append({ "item_id": item_id, "count": stack })
+		remaining -= stack
+	inventory_changed.emit(inventory)
+	return remaining

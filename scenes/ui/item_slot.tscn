@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3 uid="uid://boa0ra3lcik5g"]
+
+[ext_resource type="Script" uid="uid://bc70but18emh2" path="res://scripts/game/item_slot.gd" id="1_uw4km"]
+
+[node name="ItemSlot" type="Panel"]
+script = ExtResource("1_uw4km")
+
+[node name="Icon" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 4
+
+[node name="CountLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0

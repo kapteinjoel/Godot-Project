@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6upima2ylhom"]
+
+[ext_resource type="Script" uid="uid://1ip8dcs1lvxu" path="res://scripts/game/world_item.gd" id="1_jyr54"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_kl3b5"]
+radius = 6.0827627
+
+[node name="Worlditem" type="Node2D"]
+script = ExtResource("1_jyr54")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="PickupArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("CircleShape2D_kl3b5")

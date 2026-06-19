@@ -34,6 +34,7 @@ var ts = null
 var terrain = null
 var object_spawn_rng = RandomNumberGenerator.new()
 var use_changeset = true
+var load_all_chunks_at_once = true
 var layers_array = {}
 
 var generated_chunks := {} # Stores already generated chunks
@@ -116,6 +117,7 @@ var DECORATIONS = {
 var OBJECT_SETUP_FNS = {
 	"CHEST_1": func(obj, data): obj.object_type = obj.OBJECT_TYPE.CHEST_1; obj.load_contents(data),
 	"BARREL_1": func(obj, data): obj.object_type = obj.OBJECT_TYPE.BARREL_1,
+	"WOOD_DOOR_CLOSED": func(obj, data): obj.object_type = obj.OBJECT_TYPE.WOOD_DOOR_CLOSED,
 }
 
 var HOUSE_1 = [
@@ -180,13 +182,15 @@ var HOUSE_1 = [
 	[Vector2i(5,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(6,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(7,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
-	[Vector2i(1,5), Layers.FLOOR, Terrain.WOOD_FLOOR],
+	[Vector2i(1,5), Layers.FLOOR, Terrain.WOOD_FLOOR, "WOOD_DOOR_CLOSED"],
 ]
 func _ready() -> void:
 	
 	set_process(false)
 	randomize()
-	
+	var item = ItemRegistry.get_item("WOOD_LOG")
+	if item:
+		print("Found item: ", item.display_name)
 	#ts = tilemap.tile_set
 	#terrain = BetterTerrain.get_terrain(ts, Terrain.SAND)
 	#original_cats = terrain.categories.duplicate()
@@ -238,15 +242,22 @@ func _ready() -> void:
 		# Spawn the host (you)
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
+		var inventory_ui = get_node("../UI/HUD/InventoryAndHotbar")
+		player.inventory_changed.connect(inventory_ui.refresh)
 		mob_manager.set_process(false)
 		set_process(true)
-
+	
+	var test_item = load("res://scenes/game/worlditem.tscn").instantiate()
+	test_item.position = player.global_position + Vector2(32, 0)
+	add_child(test_item)
+	test_item.setup("WOOD_LOG", 3)
 
 func _process(_delta: float) -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	#print(active_change_sets.size())
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
-
+	
 
 #region VisualCheck
 	# ------ Visual Check ------
@@ -258,7 +269,7 @@ func _process(_delta: float) -> void:
 		return
 	# -----------------------
 #endregion
-	load_chunks_around(center_chunk)
+	load_chunks_around(center_chunk, load_all_chunks_at_once)
 	unload_far_chunks(center_chunk)
 	for i in range(active_change_sets.size() - 1, -1, -1):
 		var change_set = active_change_sets[i]
@@ -480,6 +491,7 @@ func load_chunks_around(center_chunk: Vector2i, force_all: bool = false):
 				generate_chunk_new(right_chunk)
 				generated_chunks[right_chunk] = true
 				if not force_all: return # <- Skip exit if forcing all
+	load_all_chunks_at_once = false
 
 func unload_far_chunks(center_chunk: Vector2i):
 	var keys_to_remove := []
@@ -508,13 +520,6 @@ func clear_chunk(chunk_coords: Vector2i):
 		container.queue_free() 
 		chunk_containers.erase(chunk_coords) 
 	tilemap.update_internals()
-	
-	#------------------------For Debugging ------------------------#
-	var count := 0
-	for layer in Layers.keys():
-		count += tilemap.get_used_cells(Layers[layer]).size()
-		print("After clear total cells: ", count)
-	#------------------------For Debugging------------------------#
 
 func clear_chunk_object_tiles(chunk_coords: Vector2i):
 	var chunk_origin = chunk_coords * chunk_size
@@ -864,7 +869,7 @@ func spawn_object(tile_pos: Vector2i, chunk_coords: Vector2i, scene_to_spawn: Pa
 	instance.position = tilemap.map_to_local(tile_pos)
 	instance.tile_pos = tile_pos
 	container.add_child(instance)
-	
+		
 	BetterTerrain.set_cell(tilemap, Layers.OBJECTTILE, display_pos, Terrain.OBJECT_TILE)
 	
 	return instance
@@ -881,7 +886,6 @@ func stamp_house(origin: Vector2i, blueprint: Array):
 	if changed_tiles_by_chunk.has(first_chunk_coords):
 		if changed_tiles_by_chunk[first_chunk_coords].has(first_tile_key):
 			return false
-	print("Stamping house at origin: ", origin, " first tile: ", first_tile_pos, " chunk: ", first_chunk_coords)
 	var affected_chunks = {}
 	affected_chunks[first_chunk_coords] = true
 
@@ -997,6 +1001,8 @@ func _on_player_spawned(node: Node):
 		player = node
 		print("Client: My local player is now assigned!")
 		set_process(true)
+		var inventory_ui = get_node("../UI/HUD/InventoryAndHotbar")
+		player.inventory_changed.connect(inventory_ui.refresh)
 		#mob_manager.set_process(true)
 
 
@@ -1017,10 +1023,8 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 	var chunk_offset = new_center_chunk - tilemap_anchor_chunk
 	var tile_offset = chunk_offset * chunk_size
 	
-	# 1. Update our mathematical anchor
 	tilemap_anchor_chunk = new_center_chunk
 
-	# 2. Shift the physical TileMap node forward
 	var pixel_offset = Vector2(
 		chunk_offset.x * chunk_size * TILE_SIZE_PIXELS,
 		chunk_offset.y * chunk_size * TILE_SIZE_PIXELS
@@ -1028,11 +1032,7 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 	tilemap.global_position += pixel_offset
 	tilemap.set_notify_transform(true)
 
-	# 3. Correctly grab, erase, and replace cells to shift them backwards
-	
-	
-	# To prevent overwriting data as we shift, grab all current cells first
-	var cells_to_move: Dictionary = {} # layer_id -> Array of [new_pos, source_id, atlas_coords, alt_tile]
+	var cells_to_move: Dictionary = {} 
 
 	for layer_id in layers_array:
 		var used_cells = tilemap.get_used_cells(layer_id)
@@ -1051,12 +1051,16 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 	for layer_id in layers_array:
 		var used_cells = tilemap.get_used_cells(layer_id)
 		for cell_pos in used_cells:
-			tilemap.set_cell(layer_id, cell_pos, -1) # Fast erase individual cell
+			tilemap.set_cell(layer_id, cell_pos, -1)
 
 	for layer_id in layers_array:
 		for cell in cells_to_move[layer_id]:
 			tilemap.set_cell(layer_id, cell[0], cell[1], cell[2], cell[3])
 
-	# 6. Smooth out camera interpolation jumps
 	if tilemap.has_method("reset_physics_interpolation"):
 		tilemap.reset_physics_interpolation()
+		
+	if is_instance_valid(player):
+		var camera = player.get_node_or_null("Camera2D")
+		if is_instance_valid(camera) and camera.enabled:
+			camera.reset_smoothing()

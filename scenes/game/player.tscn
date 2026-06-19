@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://biuiyqggshxc0"]
+[gd_scene load_steps=23 format=3 uid="uid://biuiyqggshxc0"]
 
 [ext_resource type="Script" uid="uid://bvappf24spss3" path="res://scripts/game/player.gd" id="1_g2els"]
 [ext_resource type="Texture2D" uid="uid://d12cayms0fbr7" path="res://assets/images/player/torsosheet.png" id="3_dqkch"]
@@ -9,6 +9,9 @@
 [ext_resource type="Texture2D" uid="uid://bq0etuogs0uwm" path="res://assets/images/player/handsheet.png" id="8_3v2ag"]
 [ext_resource type="Texture2D" uid="uid://dfk8u6s1ntalx" path="res://assets/images/player/legsheet.png" id="9_jej6c"]
 [ext_resource type="Texture2D" uid="uid://c5m100s0mm8cd" path="res://assets/images/player/feetsheet.png" id="10_y4r1p"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3vq1g"]
+size = Vector2(10, 7)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ur7pv"]
 atlas = ExtResource("10_y4r1p")
@@ -56,9 +59,13 @@ properties/1/path = NodePath(".:current_run_dir")
 properties/1/spawn = true
 properties/1/replication_mode = 1
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_g2els")
-speed = 150
+speed = 250
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_3vq1g")
 
 [node name="RunAnimationTimer" type="Timer" parent="."]
 

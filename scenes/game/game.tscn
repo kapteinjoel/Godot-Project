@@ -1,13 +1,14 @@
-[gd_scene load_steps=37 format=3 uid="uid://bjy1a2h1aq2ok"]
+[gd_scene load_steps=39 format=3 uid="uid://bjy1a2h1aq2ok"]
 
 [ext_resource type="Script" uid="uid://db6g1ph7mb766" path="res://scripts/gui/fps_label.gd" id="1_rwo3j"]
 [ext_resource type="Script" uid="uid://cv6u16qbqrl1j" path="res://scripts/game/day_night_cycle.gd" id="2_ph5vl"]
 [ext_resource type="Texture2D" uid="uid://bnuwv3byqmibl" path="res://assets/images/tilesets/game_ui.png" id="2_vaxfo"]
 [ext_resource type="Script" uid="uid://ccwa4p2ggrcj2" path="res://scripts/game/world_gen.gd" id="3_5rpqn"]
-[ext_resource type="Script" uid="uid://bfrfbir62ed5k" path="res://scenes/game/minimap.gd" id="4_ftsea"]
+[ext_resource type="Script" uid="uid://bfrfbir62ed5k" path="res://scripts/game/minimap.gd" id="4_ftsea"]
 [ext_resource type="Shader" uid="uid://cxd03ly0r6a6t" path="res://assets/shaders/fog.gdshader" id="5_ftsea"]
 [ext_resource type="Texture2D" uid="uid://d4dsef7ivgb0b" path="res://assets/images/tilesets/minimaptiles.png" id="5_otnwt"]
 [ext_resource type="Texture2D" uid="uid://ohxln8hb5mlu" path="res://assets/images/tilesets/Grass.png" id="5_y7cus"]
+[ext_resource type="Script" uid="uid://bvikmghpxicmt" path="res://scripts/game/inventory_ui.gd" id="6_3xj4h"]
 [ext_resource type="Shader" uid="uid://br27bhqqklxe1" path="res://assets/shaders/water2.gdshader" id="6_kp23o"]
 [ext_resource type="Texture2D" uid="uid://dkn61dbysdcfg" path="res://assets/images/tilesets/Water.png" id="6_wg16f"]
 [ext_resource type="Texture2D" uid="uid://mov3lpywswdb" path="res://assets/images/ui/TileFollower.png" id="8_ssgoc"]
@@ -48,6 +49,8 @@ offsets = PackedFloat32Array(0, 0.178161, 0.729885, 0.844828)
 colors = PackedColorArray(4.81308e-08, 0.0468488, 0.146379, 1, 0.893333, 0.898331, 0.908947, 1, 1, 1, 1, 1, 0, 0.0470588, 0.145098, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_5jirj"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_otnwt"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_nv2ed"]
 texture = ExtResource("5_y7cus")
@@ -1758,17 +1761,20 @@ texture = ExtResource("5_y7cus")
 34:2/0 = 0
 42:14/size_in_atlas = Vector2i(3, 3)
 42:14/0 = 0
+42:14/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 42:14/0/metadata/_better_terrain = {
 "type": 17
 }
 45:14/size_in_atlas = Vector2i(3, 3)
 45:14/0 = 0
+45:14/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 45:14/0/metadata/_better_terrain = {
 0: [17],
 "type": 17
 }
 48:14/size_in_atlas = Vector2i(3, 3)
 48:14/0 = 0
+48:14/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 48:14/0/metadata/_better_terrain = {
 0: [17],
 8: [17],
@@ -1776,12 +1782,14 @@ texture = ExtResource("5_y7cus")
 }
 51:14/size_in_atlas = Vector2i(3, 3)
 51:14/0 = 0
+51:14/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 51:14/0/metadata/_better_terrain = {
 8: [17],
 "type": 17
 }
 51:11/size_in_atlas = Vector2i(3, 3)
 51:11/0 = 0
+51:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 51:11/0/metadata/_better_terrain = {
 8: [17],
 12: [17],
@@ -1789,6 +1797,7 @@ texture = ExtResource("5_y7cus")
 }
 48:11/size_in_atlas = Vector2i(3, 3)
 48:11/0 = 0
+48:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 48:11/0/metadata/_better_terrain = {
 0: [17],
 8: [17],
@@ -1797,6 +1806,7 @@ texture = ExtResource("5_y7cus")
 }
 45:11/size_in_atlas = Vector2i(3, 3)
 45:11/0 = 0
+45:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 45:11/0/metadata/_better_terrain = {
 0: [17],
 12: [17],
@@ -1804,12 +1814,14 @@ texture = ExtResource("5_y7cus")
 }
 42:11/size_in_atlas = Vector2i(3, 3)
 42:11/0 = 0
+42:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 42:11/0/metadata/_better_terrain = {
 12: [17],
 "type": 17
 }
 42:8/size_in_atlas = Vector2i(3, 3)
 42:8/0 = 0
+42:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 42:8/0/metadata/_better_terrain = {
 4: [17],
 12: [17],
@@ -1817,12 +1829,14 @@ texture = ExtResource("5_y7cus")
 }
 42:5/size_in_atlas = Vector2i(3, 3)
 42:5/0 = 0
+42:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 42:5/0/metadata/_better_terrain = {
 4: [17],
 "type": 17
 }
 45:5/size_in_atlas = Vector2i(3, 3)
 45:5/0 = 0
+45:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 45:5/0/metadata/_better_terrain = {
 0: [17],
 4: [17],
@@ -1830,6 +1844,7 @@ texture = ExtResource("5_y7cus")
 }
 45:8/size_in_atlas = Vector2i(3, 3)
 45:8/0 = 0
+45:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 45:8/0/metadata/_better_terrain = {
 0: [17],
 4: [17],
@@ -1838,6 +1853,7 @@ texture = ExtResource("5_y7cus")
 }
 48:8/size_in_atlas = Vector2i(3, 3)
 48:8/0 = 0
+48:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 48:8/0/metadata/_better_terrain = {
 0: [17],
 4: [17],
@@ -1847,6 +1863,7 @@ texture = ExtResource("5_y7cus")
 }
 51:8/size_in_atlas = Vector2i(3, 3)
 51:8/0 = 0
+51:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 51:8/0/metadata/_better_terrain = {
 4: [17],
 8: [17],
@@ -1855,6 +1872,7 @@ texture = ExtResource("5_y7cus")
 }
 48:5/size_in_atlas = Vector2i(3, 3)
 48:5/0 = 0
+48:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 48:5/0/metadata/_better_terrain = {
 0: [17],
 4: [17],
@@ -1863,23 +1881,118 @@ texture = ExtResource("5_y7cus")
 }
 51:5/size_in_atlas = Vector2i(3, 3)
 51:5/0 = 0
+51:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 51:5/0/metadata/_better_terrain = {
 4: [17],
 8: [17],
 "type": 17
 }
+54:5/size_in_atlas = Vector2i(3, 3)
+54:5/0 = 0
+54:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+54:5/0/metadata/_better_terrain = {
+0: [17],
+3: [17],
+4: [17],
+&"type": 17
+}
+57:5/size_in_atlas = Vector2i(3, 3)
+57:5/0 = 0
+57:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+57:5/0/metadata/_better_terrain = {
+0: [17],
+3: [17],
+4: [17],
+7: [17],
+8: [17],
+&"type": 17
+}
+60:5/size_in_atlas = Vector2i(3, 3)
+60:5/0 = 0
+60:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+60:5/0/metadata/_better_terrain = {
+4: [17],
+7: [17],
+8: [17],
+&"type": 17
+}
+60:8/size_in_atlas = Vector2i(3, 3)
+60:8/0 = 0
+60:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+60:8/0/metadata/_better_terrain = {
+4: [17],
+7: [17],
+8: [17],
+11: [17],
+12: [17],
+&"type": 17
+}
+60:11/size_in_atlas = Vector2i(3, 3)
+60:11/0 = 0
+60:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+60:11/0/metadata/_better_terrain = {
+8: [17],
+11: [17],
+12: [17],
+&"type": 17
+}
+57:11/size_in_atlas = Vector2i(3, 3)
+57:11/0 = 0
+57:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+57:11/0/metadata/_better_terrain = {
+0: [17],
+8: [17],
+11: [17],
+12: [17],
+15: [17],
+&"type": 17
+}
+57:8/size_in_atlas = Vector2i(3, 3)
+57:8/0 = 0
+57:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+57:8/0/metadata/_better_terrain = {
+0: [17],
+3: [17],
+4: [17],
+7: [17],
+8: [17],
+11: [17],
+12: [17],
+15: [17],
+&"type": 17
+}
+54:8/size_in_atlas = Vector2i(3, 3)
+54:8/0 = 0
+54:8/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+54:8/0/metadata/_better_terrain = {
+0: [17],
+3: [17],
+4: [17],
+12: [17],
+15: [17],
+&"type": 17
+}
+54:11/size_in_atlas = Vector2i(3, 3)
+54:11/0 = 0
+54:11/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+54:11/0/metadata/_better_terrain = {
+0: [17],
+12: [17],
+15: [17],
+&"type": 17
+}
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_kp23o"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5jirj"]
-seamless = true
 noise = SubResource("FastNoiseLite_kp23o")
+seamless = true
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_vaxfo"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ftsea"]
-seamless = true
 noise = SubResource("FastNoiseLite_vaxfo")
+seamless = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vaxfo"]
 shader = ExtResource("6_kp23o")
@@ -1916,14 +2029,14 @@ texture = ExtResource("9_ftsea")
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_ftsea"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_otnwt"]
-seamless = true
 noise = SubResource("FastNoiseLite_ftsea")
+seamless = true
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_3xj4h"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5v6r0"]
-seamless = true
 noise = SubResource("FastNoiseLite_3xj4h")
+seamless = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uyinl"]
 shader = ExtResource("6_kp23o")
@@ -1951,6 +2064,8 @@ texture = ExtResource("6_wg16f")
 }
 
 [sub_resource type="TileSet" id="TileSet_u221f"]
+physics_layer_0/collision_layer = 1
+physics_layer_0/physics_material = SubResource("PhysicsMaterial_otnwt")
 terrain_set_0/mode = 0
 terrain_set_0/terrain_0/name = "Grass"
 terrain_set_0/terrain_0/color = Color(0.501961, 0.0392157, 0.25098, 1)
@@ -2074,6 +2189,9 @@ script = ExtResource("4_ftsea")
 
 [node name="SubViewport" type="SubViewport" parent="UI/HUD/SubViewportContainer"]
 handle_input_locally = false
+physics_object_picking = true
+physics_object_picking_sort = true
+physics_object_picking_first_only = true
 size = Vector2i(20, 20)
 render_target_update_mode = 4
 
@@ -2087,6 +2205,50 @@ format = 2
 
 [node name="MiniMapTileset" type="Sprite2D" parent="UI/HUD/SubViewportContainer/SubViewport"]
 visible = false
+
+[node name="InventoryAndHotbar" type="Control" parent="UI/HUD"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_3xj4h")
+
+[node name="HotbarContainer" type="HBoxContainer" parent="UI/HUD/InventoryAndHotbar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="InventoryPanel" type="Panel" parent="UI/HUD/InventoryAndHotbar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/HUD/InventoryAndHotbar/InventoryPanel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Label" type="Label" parent="UI/HUD/InventoryAndHotbar/InventoryPanel/VBoxContainer"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="InventorySlots" type="GridContainer" parent="UI/HUD/InventoryAndHotbar/InventoryPanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 6
 
 [node name="DayNightCycle" type="Node2D" parent="."]
 texture_filter = 2
