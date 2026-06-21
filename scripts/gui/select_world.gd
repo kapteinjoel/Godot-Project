@@ -3,11 +3,11 @@ extends Control
 const WORLDS_DIR_PATH = "user://worlds/"
 
 # Get a reference to the container that will hold the world buttons.
-@onready var world_list_container = $CenterContainer/VBoxContainer/ScrollContainer/GridContainer
-@onready var vbox = $CenterContainer/VBoxContainer
+@onready var world_list_container = $CanvasLayer/CenterContainer/VBoxContainer/ScrollContainer/GridContainer
+@onready var vbox = $CanvasLayer/CenterContainer/VBoxContainer
 
-@onready var screen_width = get_viewport().size.x
-@onready var screen_height = get_viewport().size.y
+@onready var screen_width = get_viewport().size.x / 4
+@onready var screen_height = get_viewport().size.y / 4
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

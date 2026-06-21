@@ -1,14 +1,16 @@
-[gd_scene load_steps=6 format=3 uid="uid://c6frybrdh7gq"]
+[gd_scene load_steps=8 format=3 uid="uid://c6frybrdh7gq"]
 
 [ext_resource type="Texture2D" uid="uid://difdpi4dvhmue" path="res://assets/images/tilesets/small_object_sheet.png" id="1_fpc65"]
 [ext_resource type="Script" uid="uid://dmhstht16use6" path="res://scripts/game/staticobject.gd" id="1_vfdns"]
+[ext_resource type="Texture2D" uid="uid://d2bbi8e6jb57j" path="res://assets/images/fx/fire.png" id="3_xehj1"]
+[ext_resource type="Texture2D" uid="uid://bgayrvlry8aru" path="res://assets/images/fx/light_gradient_steep.png" id="4_b2yi8"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xehj1"]
 size = Vector2(12, 10)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vfdns"]
 atlas = ExtResource("1_fpc65")
-region = Rect2(191.94072, 15.989877, 16.045853, 32.105507)
+region = Rect2(143.99275, 80.05039, 15.9423065, 15.9423065)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vfdns"]
 size = Vector2(16, 32)
@@ -36,5 +38,21 @@ region_enabled = true
 [node name="ClickArea" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ClickArea"]
+visible = false
 position = Vector2(0, -8)
 shape = SubResource("RectangleShape2D_vfdns")
+
+[node name="FireOverlay" type="Sprite2D" parent="."]
+position = Vector2(0, 8)
+texture = ExtResource("3_xehj1")
+offset = Vector2(0, -16)
+hframes = 10
+
+[node name="FireTimer" type="Timer" parent="."]
+wait_time = 0.1
+
+[node name="FireLight" type="PointLight2D" parent="."]
+position = Vector2(1, -3)
+range_item_cull_mask = 3
+shadow_enabled = true
+texture = ExtResource("4_b2yi8")

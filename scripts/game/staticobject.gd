@@ -5,11 +5,16 @@ var tile_pos: Vector2i
 @export var atlas_texture: Texture2D
 @onready var sprite := $Sprite2D
 @onready var stems := $Stems
-#@onready var solid_collision_shape := $CollisionShape2D
+@onready var fire_overlay := $FireOverlay
+@onready var fire_timer := $FireTimer
+@onready var fire_light := $FireLight
 
 # Nodes for collision handling
 @onready var click_area := $ClickArea
 @onready var solid_body_collision := $SolidCollisionShape
+
+var light_base_energy := 0.5
+var light_target_energy := 0.5
 
 var inventory: Array = []
 
@@ -37,6 +42,7 @@ enum OBJECT_TYPE {
 	RIVER_ROCK_2,
 	RIVER_ROCK_3,
 	RIVER_ROCK_4,
+	OAK_CAMPFIRE,
 	WOOD_DOOR_CLOSED,
 	WOOD_DOOR_OPEN
 }
@@ -65,6 +71,7 @@ const OBJECT_REGIONS := {
 	OBJECT_TYPE.RIVER_ROCK_2: Rect2i(96, 64, 16, 16),
 	OBJECT_TYPE.RIVER_ROCK_3: Rect2i(112, 64, 16, 16),
 	OBJECT_TYPE.RIVER_ROCK_4: Rect2i(128, 64, 16, 16),
+	OBJECT_TYPE.OAK_CAMPFIRE: Rect2i(144, 80, 16, 16),
 	OBJECT_TYPE.WOOD_DOOR_CLOSED: Rect2i(192, 16, 16, 32),
 	OBJECT_TYPE.WOOD_DOOR_OPEN: Rect2i(208, 16, 16, 32)
 }
@@ -93,6 +100,7 @@ const OBJECT_OFFSETS := {
 	OBJECT_TYPE.RIVER_ROCK_2: Vector2(-8, -8),
 	OBJECT_TYPE.RIVER_ROCK_3: Vector2(-8, -8),
 	OBJECT_TYPE.RIVER_ROCK_4: Vector2(-8, -8),
+	OBJECT_TYPE.OAK_CAMPFIRE: Vector2(-8, -8),
 	OBJECT_TYPE.WOOD_DOOR_CLOSED: Vector2(-8, -24),
 	OBJECT_TYPE.WOOD_DOOR_OPEN: Vector2(-8, -24),
 }
@@ -101,6 +109,7 @@ const OBJECT_Z_INDEX := {
 	OBJECT_TYPE.ROCK_1: 0,
 	OBJECT_TYPE.CRATE_1: 0,
 	OBJECT_TYPE.BARREL_1: 0,
+	OBJECT_TYPE.OAK_CAMPFIRE: 0,
 	OBJECT_TYPE.LILY_1: -1,
 	OBJECT_TYPE.LILY_2: -1,
 	OBJECT_TYPE.LILY_3: -1,
@@ -131,8 +140,19 @@ const OBJECT_Z_INDEX := {
 
 func _ready():
 	sprite = $Sprite2D
+	fire_timer.timeout.connect(_on_fire_timer_timeout)
+	set_process(false)
 	_apply_object_type()
 
+func _process(delta: float) -> void:
+	# Periodically pick a new random target energy to simulate sputtering flame
+	# randf_range parameters keep it from getting too dark or blindingly bright
+	if randf() < 0.1: # 10% chance per frame to choose a new intensity target
+		light_target_energy = light_base_energy + randf_range(-0.15, 0.15)
+	
+	# Smoothly interpolate towards the target energy
+	# Using a speed multiplier (e.g., 8.0) makes the flicker snappy but smooth
+	fire_light.energy = lerp(fire_light.energy, light_target_energy, delta * 8.0)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("right_click"):
@@ -217,8 +237,16 @@ func _apply_object_type():
 		sprite.offset = OBJECT_OFFSETS[object_type]
 	if OBJECT_Z_INDEX.has(object_type):
 		z_index = OBJECT_Z_INDEX[object_type]
-
-		
+	var is_campfire := object_type == OBJECT_TYPE.OAK_CAMPFIRE
+	fire_overlay.visible = is_campfire
+	fire_light.enabled = is_campfire
+	#fire_overlay.z_index = z_index + 1
+	if is_campfire:
+		set_process(true)
+		fire_overlay.frame = 0
+		fire_timer.start()
+	else:
+		fire_timer.stop()
 	# Apply stems only for lily types
 	var is_lily := object_type >= OBJECT_TYPE.LILY_1 and object_type <= OBJECT_TYPE.LILY_8
 	stems.visible = is_lily
@@ -231,6 +259,7 @@ func _apply_object_type():
 		if OBJECT_Z_INDEX.has(stem_type):
 			stems.z_index = OBJECT_Z_INDEX[stem_type]
 	_update_solid_blocking() 
+
 func load_data(data: Dictionary):
 	if data.is_empty():
 		return
@@ -241,3 +270,6 @@ func get_data() -> Dictionary:
 	return {
 		"items": inventory
 	}
+
+func _on_fire_timer_timeout() -> void:
+	fire_overlay.frame = (fire_overlay.frame + 1) % fire_overlay.hframes

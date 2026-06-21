@@ -1,9 +1,8 @@
-[gd_scene load_steps=91 format=3 uid="uid://cn6jimxv22d7x"]
+[gd_scene load_steps=90 format=3 uid="uid://cn6jimxv22d7x"]
 
 [ext_resource type="Script" uid="uid://8u7a4hqkbnh8" path="res://scripts/gui/create_character.gd" id="1_h557r"]
 [ext_resource type="Texture2D" uid="uid://1ewrv0f5n6it" path="res://assets/images/ui/backkground.png" id="2_8614w"]
 [ext_resource type="Texture2D" uid="uid://dmrqxgro6sq2i" path="res://assets/images/ui/buttons.png" id="2_nof60"]
-[ext_resource type="Texture2D" uid="uid://biom43x2mdun2" path="res://assets/images/ui/screenshot.png" id="2_w388w"]
 [ext_resource type="AudioStream" uid="uid://crdno3cd8fehv" path="res://assets/sounds/hover.mp3" id="3_nof60"]
 [ext_resource type="FontFile" uid="uid://b31n13t8vwohc" path="res://assets/other/fonts/Lilian.ttf" id="3_q75lb"]
 [ext_resource type="AudioStream" uid="uid://cxyibq2ug7x03" path="res://assets/sounds/click (2).mp3" id="4_flluo"]
@@ -246,15 +245,14 @@ anchors_preset = 0
 offset_right = 1920.0
 offset_bottom = 1080.0
 script = ExtResource("1_h557r")
-player = NodePath("CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player")
+player = NodePath("CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player")
 
-[node name="Screenshot" type="Sprite2D" parent="."]
-position = Vector2(959.5, 540)
-scale = Vector2(0.250521, 0.255556)
-texture = ExtResource("2_w388w")
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+offset = Vector2(-2880, -1620)
+scale = Vector2(4, 4)
+transform = Transform2D(4, 0, 0, 4, -2880, -1620)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
-layout_mode = 1
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer"]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -267,33 +265,33 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BackgroundPanel" type="Panel" parent="CenterContainer"]
+[node name="BackgroundPanel" type="Panel" parent="CanvasLayer/CenterContainer"]
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_8mxxh")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CenterContainer"]
 layout_mode = 2
 
-[node name="TopSpacingPanel" type="Panel" parent="CenterContainer/VBoxContainer"]
+[node name="TopSpacingPanel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_tbcgi")
 
-[node name="CharacterEditor" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="CharacterEditor" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="CenterContainer" type="CenterContainer" parent="CenterContainer/VBoxContainer/CharacterEditor"]
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor"]
 layout_mode = 2
 
-[node name="CharacterAttributes" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer"]
+[node name="CharacterAttributes" type="VBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer"]
 layout_mode = 2
 theme_override_constants/separation = -2
 
-[node name="Hair" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="Hair" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="LHairButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
+[node name="LHairButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_vertical = 4
@@ -309,14 +307,14 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_8614w")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_8mxxh")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_w388w")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Hair"
 label_settings = SubResource("LabelSettings_fia0a")
 horizontal_alignment = 1
 
-[node name="RHairButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
+[node name="RHairButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_vertical = 4
@@ -332,13 +330,13 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_0gkbd")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_ye7om")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_sp7fy")
 
-[node name="Panel" type="Panel" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
+[node name="Panel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Hair"]
 layout_mode = 2
 
-[node name="Body" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="Body" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="LBodyButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
+[node name="LBodyButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_vertical = 4
@@ -354,14 +352,14 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_8614w")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_8mxxh")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_w388w")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Shirt"
 label_settings = SubResource("LabelSettings_w388w")
 horizontal_alignment = 1
 
-[node name="RBodyButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
+[node name="RBodyButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -378,13 +376,13 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_0gkbd")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_ye7om")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_sp7fy")
 
-[node name="Panel" type="Panel" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
+[node name="Panel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Body"]
 layout_mode = 2
 
-[node name="Legs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="Legs" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="LLegsButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
+[node name="LLegsButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_vertical = 4
@@ -400,7 +398,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_8614w")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_8mxxh")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_w388w")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
@@ -408,7 +406,7 @@ text = "Pants"
 label_settings = SubResource("LabelSettings_rte6o")
 horizontal_alignment = 1
 
-[node name="RLegsButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
+[node name="RLegsButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
 custom_minimum_size = Vector2(6, 8)
 layout_mode = 2
 size_flags_vertical = 4
@@ -424,15 +422,15 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_0gkbd")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_ye7om")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_sp7fy")
 
-[node name="Panel" type="Panel" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
+[node name="Panel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Legs"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="Eyes" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="Eyes" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
+[node name="Button" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
 custom_minimum_size = Vector2(7, 8)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -449,14 +447,14 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_rul1u")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_p2owc")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_au21l")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Eye Color"
 label_settings = SubResource("LabelSettings_8mxxh")
 horizontal_alignment = 1
 
-[node name="EyeColorButton" type="ColorPickerButton" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
+[node name="EyeColorButton" type="ColorPickerButton" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes"]
 custom_minimum_size = Vector2(11, 12)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -474,10 +472,10 @@ theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_mqw1i")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_3wsm0")
 theme_override_icons/bg = SubResource("AtlasTexture_w388w")
 
-[node name="HairColor" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="HairColor" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
+[node name="Button" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
 custom_minimum_size = Vector2(7, 8)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -494,13 +492,13 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_rul1u")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_p2owc")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_au21l")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
 layout_mode = 2
 text = "Hair Color"
 label_settings = SubResource("LabelSettings_8614w")
 horizontal_alignment = 1
 
-[node name="HairColorButton" type="ColorPickerButton" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
+[node name="HairColorButton" type="ColorPickerButton" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor"]
 custom_minimum_size = Vector2(11, 12)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -518,10 +516,10 @@ theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_mqw1i")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_3wsm0")
 theme_override_icons/bg = SubResource("AtlasTexture_w388w")
 
-[node name="Skin" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
+[node name="Skin" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
+[node name="Button" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
 custom_minimum_size = Vector2(7, 8)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -538,7 +536,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_rul1u")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_p2owc")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_au21l")
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("3_q75lb")
@@ -546,7 +544,7 @@ text = "Skin Color"
 label_settings = SubResource("LabelSettings_q75lb")
 horizontal_alignment = 1
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin"]
 custom_minimum_size = Vector2(11, 12)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -564,27 +562,27 @@ theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_mqw1i")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_3wsm0")
 theme_override_icons/bg = SubResource("AtlasTexture_w388w")
 
-[node name="SpacingPanel" type="Panel" parent="CenterContainer/VBoxContainer/CharacterEditor"]
+[node name="SpacingPanel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor"]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_w8tfo")
 
-[node name="CenterContainer2" type="CenterContainer" parent="CenterContainer/VBoxContainer/CharacterEditor"]
+[node name="CenterContainer2" type="CenterContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor"]
 layout_mode = 2
 
-[node name="CharacterPanel" type="Panel" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2"]
+[node name="CharacterPanel" type="Panel" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2"]
 custom_minimum_size = Vector2(56, 66)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_fia0a")
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2"]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2"]
 z_index = 10
 texture_filter = 1
 custom_minimum_size = Vector2(50, 75)
 layout_mode = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer"]
 disable_3d = true
 transparent_bg = true
 handle_input_locally = false
@@ -594,19 +592,19 @@ canvas_item_default_texture_filter = 0
 size = Vector2i(50, 75)
 render_target_update_mode = 4
 
-[node name="Player" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport" instance=ExtResource("11_w388w")]
+[node name="Player" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport" instance=ExtResource("11_w388w")]
 texture_filter = 1
 
-[node name="Camera2D2" type="Camera2D" parent="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player"]
+[node name="Camera2D2" type="Camera2D" parent="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer2/SubViewportContainer/SubViewport/Player"]
 texture_filter = 1
 position = Vector2(0.2, -6.5)
 zoom = Vector2(2, 2)
 
-[node name="BottomButtons" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="BottomButtons" type="HBoxContainer" parent="CanvasLayer/CenterContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="CharacterName" type="LineEdit" parent="CenterContainer/VBoxContainer/BottomButtons"]
+[node name="CharacterName" type="LineEdit" parent="CanvasLayer/CenterContainer/VBoxContainer/BottomButtons"]
 custom_minimum_size = Vector2(75, 20)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -623,7 +621,7 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_jj8q7")
 placeholder_text = "Name..."
 alignment = 1
 
-[node name="BackButton" type="Button" parent="CenterContainer/VBoxContainer/BottomButtons"]
+[node name="BackButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/BottomButtons"]
 custom_minimum_size = Vector2(45, 24)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -642,7 +640,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_o7ly3")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_6bq8m")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_i8wok")
 
-[node name="CreateButton" type="Button" parent="CenterContainer/VBoxContainer/BottomButtons"]
+[node name="CreateButton" type="Button" parent="CanvasLayer/CenterContainer/VBoxContainer/BottomButtons"]
 custom_minimum_size = Vector2(45, 24)
 layout_mode = 2
 size_flags_vertical = 4
@@ -659,21 +657,17 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_bsif3")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxEmpty_ijv4d")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_sybql")
 
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(960, 540)
-zoom = Vector2(4, 4)
-
 [node name="HoverSoundPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_nof60")
 
 [node name="ButtonPressedSoundPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_flluo")
 
-[connection signal="color_changed" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton" to="." method="_on_eye_color_button_color_changed"]
-[connection signal="picker_created" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton" to="." method="_on_eye_color_button_picker_created"]
-[connection signal="color_changed" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton" to="." method="_on_hair_color_button_color_changed"]
-[connection signal="picker_created" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton" to="." method="_on_hair_color_button_picker_created"]
-[connection signal="color_changed" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton" to="." method="_on_color_picker_button_color_changed"]
-[connection signal="picker_created" from="CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton" to="." method="_on_color_picker_button_picker_created"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/BottomButtons/BackButton" to="." method="_on_back_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/BottomButtons/CreateButton" to="." method="_on_create_button_pressed"]
+[connection signal="color_changed" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton" to="." method="_on_eye_color_button_color_changed"]
+[connection signal="picker_created" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton" to="." method="_on_eye_color_button_picker_created"]
+[connection signal="color_changed" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton" to="." method="_on_hair_color_button_color_changed"]
+[connection signal="picker_created" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton" to="." method="_on_hair_color_button_picker_created"]
+[connection signal="color_changed" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton" to="." method="_on_color_picker_button_color_changed"]
+[connection signal="picker_created" from="CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton" to="." method="_on_color_picker_button_picker_created"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/VBoxContainer/BottomButtons/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/VBoxContainer/BottomButtons/CreateButton" to="." method="_on_create_button_pressed"]

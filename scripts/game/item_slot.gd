@@ -5,8 +5,13 @@ extends Panel
 @onready var count_label: Label = $CountLabel
 
 var _icon_atlas: Texture2D = preload("res://assets/images/items/item_icons.png")
+var slot_index: int = -1
+var item_id: String = ""
+var count: int = 0  
 
-func set_slot(item_id: String, count: int) -> void:
+func set_slot(id: String, amount: int) -> void:
+	item_id = id    # store it
+	count = amount  # store it
 	if item_id == "":
 		clear_slot()
 		return
@@ -21,6 +26,8 @@ func set_slot(item_id: String, count: int) -> void:
 	count_label.visible = true
 
 func clear_slot() -> void:
+	item_id = ""
+	count = 0
 	icon.texture = null
 	count_label.text = ""
 
@@ -36,3 +43,20 @@ func set_selected(selected: bool) -> void:
 		add_theme_stylebox_override("panel", style)
 	else:
 		remove_theme_stylebox_override("panel")
+
+func _get_drag_data(at_position: Vector2):
+	if item_id == "":
+		return null
+	# Show a preview icon following the cursor
+	var preview = TextureRect.new()
+	preview.texture = icon.texture
+	preview.custom_minimum_size = Vector2(32, 32)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	set_drag_preview(preview)
+	return { "item_id": item_id, "count": count, "slot_index": slot_index }
+	
+func _can_drop_data(at_position: Vector2, data) -> bool:
+	return data is Dictionary and data.has("slot_index") and data["slot_index"] != slot_index
+
+func _drop_data(at_position: Vector2, data) -> void:
+	get_tree().get_first_node_in_group("inventory_ui").move_slot(data["slot_index"], slot_index)

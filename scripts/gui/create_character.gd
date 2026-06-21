@@ -1,12 +1,12 @@
 extends Control
 
 #@onready var character_panel = $CenterContainer/VBoxContainer/CharacterEditor/CharacterPanel
-@onready var skin_color_picker: ColorPickerButton = $CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton
-@onready var hair_color_picker: ColorPickerButton = $CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton
-@onready var eye_color_picker: ColorPickerButton = $CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton
+@onready var skin_color_picker: ColorPickerButton = $CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Skin/ColorPickerButton
+@onready var hair_color_picker: ColorPickerButton = $CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/HairColor/HairColorButton
+@onready var eye_color_picker: ColorPickerButton = $CanvasLayer/CenterContainer/VBoxContainer/CharacterEditor/CenterContainer/CharacterAttributes/Eyes/EyeColorButton
 @onready var hover_sound_player = $HoverSoundPlayer
 @onready var button_pressed_sound_player = $ButtonPressedSoundPlayer
-@onready var character_name = $CenterContainer/VBoxContainer/BottomButtons/CharacterName
+@onready var character_name = $CanvasLayer/CenterContainer/VBoxContainer/BottomButtons/CharacterName
 @export var player: Node2D
 var new_player_color = null
 var skin_color = null
@@ -18,6 +18,7 @@ var mana = 100
 var speed = 200
 var critical_strike_chance = 0
 var inventory = []
+var inventory_size = 24
 
 func _ready():
 	skin_color_picker.color = Color(0, 0, 0, 0)
@@ -39,6 +40,7 @@ func _on_create_button_pressed() -> void:
 	"critical_strike_chance": critical_strike_chance,
 	"mana": mana,
 	"inventory": inventory,
+	"inventory_size": inventory_size,
 	"skin_color": skin_color.to_html(),
 	"hair_color": hair_color.to_html(),
 	"eye_color": eye_color.to_html()

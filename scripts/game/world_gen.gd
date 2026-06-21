@@ -6,6 +6,8 @@ const RIVER_HALF_WIDTH = 4.5    # Changes river tile diameter
 const RIVER_BANK_WIDTH = 1.5    # bank tiles on top of that
 const MIN_TILE_WIDTH_FOR_ISLAND = 17 # The river must be at least this many tiles wide to get an island
 const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/fewer islands
+const RECENTER_DRIFT_CHUNKS := 30   # prefer to recenter here when standing still
+const RECENTER_FORCE_CHUNKS := 50   # force it regardless if drift gets this large
 
 @onready var tilemap: TileMap = $WorldTileMap
 @onready var tilefollower: Sprite2D = $TileFollower
@@ -13,7 +15,11 @@ const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/
 @onready var players_container = $Players
 @onready var mob_manager = $MobManager
 
-#@onready var minimap =  get_tree().get_first_node_in_group("minimap")
+# For scrolling backgrounds in the main menu
+@export var preview_mode: bool = false
+@export var preview_camera_speed: Vector2 = Vector2(24, 10)
+@onready var preview_camera: Camera2D = $PreviewCamera
+
 
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
@@ -47,6 +53,7 @@ var chunks_requiring_direct_update: Dictionary = {}
 var pending_terrain_updates: Array = []
 var current_change_set = null
 var active_change_sets: Array = []
+var focus_node: Node2D
 
 # The tilemap layer for the player to edit tiles at
 var players_layer_index := 9
@@ -190,6 +197,11 @@ func _ready() -> void:
 	
 	set_process(false)
 	randomize()
+	
+	if preview_mode:
+		Global.world_data.seed = randi()
+	else:
+		load_saved_chunk_index()
 	var item = ItemRegistry.get_item("WOOD_LOG")
 	if item:
 		print("Found item: ", item.display_name)
@@ -235,55 +247,61 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
-	load_saved_chunk_index() 
 	
-	if multiplayer.is_server():
+	if preview_mode:
+		preview_camera.enabled = true
+		focus_node = preview_camera
+		var hud = get_tree().get_first_node_in_group("hud")
+		if hud:
+			hud.visible = false
+			hud.process_mode = Node.PROCESS_MODE_DISABLED
+		mob_manager.set_process(false)
+		tilefollower.visible = false
+		set_process(true)
+	elif multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 		$SaveTimer.timeout.connect(_on_save_timer_timeout) # Start timer to save world data
 		# Spawn the host (you)
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
+		focus_node = player
 		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
 		if inventory_ui:
 			player.inventory_changed.connect(inventory_ui.refresh)
 			inventory_ui.refresh(player.inventory)
 		mob_manager.set_process(false)
 		set_process(true)
-	
-	var test_item = load("res://scenes/game/worlditem.tscn").instantiate()
-	test_item.position = player.global_position + Vector2(32, 0)
-	add_child(test_item)
-	test_item.setup("WOOD_LOG", 3)
 
-func _process(_delta: float) -> void:
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	#print(active_change_sets.size())
+func _process(delta: float) -> void:
+	if preview_mode:
+		preview_camera.position += preview_camera_speed * delta
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
-	
 
-#region VisualCheck
-	# ------ Visual Check ------
-	# If the player has moved further than our view distance from the anchor, snap it back
 	var dist_x = abs(center_chunk.x - tilemap_anchor_chunk.x)
 	var dist_y = abs(center_chunk.y - tilemap_anchor_chunk.y)
-	if max(dist_x, dist_y) > view_distance and active_change_sets.is_empty():
+	var drift = max(dist_x, dist_y)
+
+	if drift > RECENTER_FORCE_CHUNKS and active_change_sets.is_empty():
 		_recenter_tilemap(center_chunk)
 		return
-	# -----------------------
-#endregion
+	elif drift > RECENTER_DRIFT_CHUNKS and active_change_sets.is_empty() and is_focus_stationary():
+		_recenter_tilemap(center_chunk)
+		print('recentered while standing still')
+		return
+
 	load_chunks_around(center_chunk, load_all_chunks_at_once)
 	unload_far_chunks(center_chunk)
 	for i in range(active_change_sets.size() - 1, -1, -1):
 		var change_set = active_change_sets[i]
-		
 		if BetterTerrain.is_terrain_changeset_ready(change_set):
 			BetterTerrain.wait_for_terrain_changeset(change_set)
 			BetterTerrain.apply_terrain_changeset(change_set)
-			active_change_sets.remove_at(i) # Clean up this specific thread tracker
-			
-	# Only clear and queue up new updates if ALL previous layer calculations are fully complete
+			active_change_sets.remove_at(i)
 	if active_change_sets.is_empty():
 		_flush_terrain_updates()
 
@@ -292,6 +310,8 @@ func _enter_tree() -> void:
 	print("enter")
 	
 func _input(event):
+	if preview_mode:
+		return
 	if event.is_action_pressed("change_tile"):
 		var hovered_tile = tilefollower.get_hovered_tile_coords()
 		change_tile_at_location(hovered_tile, players_layer_index, Terrain.WOOD_WALL)
@@ -345,8 +365,13 @@ func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_ty
 		clear_chunk_object_tiles(chunk_coords)
 	
 func get_player_tile_coords() -> Vector2i:
-	return tilemap.local_to_map(player.global_position)
-	
+	return tilemap.local_to_map(focus_node.global_position)
+
+func is_focus_stationary() -> bool:
+	if preview_mode:
+		return false
+	return is_instance_valid(player) and player.velocity == Vector2.ZERO
+
 func get_chunk_file_path(chunk_coords: Vector2i) -> String:
 	var world_name_lower = Global.world_data.name.strip_edges().replace(" ", "_").to_lower()
 	return "user://worlds/" + world_name_lower + "/chunks/" + str(chunk_coords.x) + "_" + str(chunk_coords.y) + ".json"
@@ -441,15 +466,19 @@ func save_object_to_chunk(tile_pos: Vector2i, object_id: String, object_data: Di
 	}
 	dirty_chunks[chunk_coords] = true
 
-func drop_item_at(tile_pos: Vector2i, item_id: String, count: int) -> void:
+func drop_item_at(tile_pos: Vector2i, item_id: String, count: int, throw_dir: Vector2 = Vector2.ZERO) -> void:
 	save_world_item_to_chunk(tile_pos, item_id, count)
 	var chunk_coords = get_chunk_coords(tile_pos)
 	var container = get_or_create_chunk_container(chunk_coords)
 	var instance = world_item_scene.instantiate()
-	instance.position = tilemap.map_to_local(tile_pos)
+	instance.position = tilemap.to_global(tilemap.map_to_local(world_tile_to_display_tile(tile_pos)))
 	instance.tile_pos = tile_pos
 	container.add_child(instance)
-	instance.setup(item_id, count)
+	# Ignore collision with all players
+	for p in players_container.get_children():
+		if p is CharacterBody2D:
+			instance.add_collision_exception_with(p)
+	instance.setup(item_id, count, throw_dir)
 	instance.picked_up.connect(remove_world_item_from_chunk)
 
 func save_chunk_changes(chunk_coords: Vector2i) -> void:
@@ -624,13 +653,13 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				var is_autumn = between(moist, 0.4, 0.9) and (temp > 0.6)
 				var is_desert = temp > 0.7 and moist < 0.4
 				if is_plains:
-					pass
+					generate_forest(tile_pos, chunk_coords)
 					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#
 				elif is_autumn:
-					pass
+					generate_forest(tile_pos, chunk_coords)
 					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#  
 				elif is_desert:
-					pass
+					generate_forest(tile_pos, chunk_coords)
 					#tilemap.set_cell(Layers.GROUND, display_pos, 0, Vector2i(0, 0))           #----------------#
 				else:
 					generate_forest(tile_pos, chunk_coords)
@@ -644,7 +673,9 @@ func generate_chunk_new(chunk_coords: Vector2i):
 	var changed_tiles_in_this_chunk: Dictionary = changed_tiles_by_chunk.get(chunk_coords, {})
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
-		
+		# Skip for item entries
+		if tile_data.get("type", "") == "world_item":
+			continue
 		# Skip object entries — handled separately below
 		if tile_data.get("type", "") == "object":
 			continue
@@ -677,16 +708,20 @@ func generate_chunk_new(chunk_coords: Vector2i):
 				var object_data = tile_data.get("object_data", {})
 				if OBJECT_SETUP_FNS.has(object_id):
 					OBJECT_SETUP_FNS[object_id].call(instance, object_data)
-					
+	
+	# load in dropped items				
 	for key in changed_tiles_in_this_chunk.keys():
 		var tile_data = changed_tiles_in_this_chunk[key]
 		if tile_data.get("type", "") == "world_item":
 			var tile_pos = Vector2i(int(tile_data.get("x", 0)), int(tile_data.get("y", 0)))
 			var instance = world_item_scene.instantiate()
 			var container = get_or_create_chunk_container(chunk_coords)
-			instance.position = tilemap.map_to_local(tile_pos)
+			instance.position = tilemap.to_global(tilemap.map_to_local(world_tile_to_display_tile(tile_pos)))
 			instance.tile_pos = tile_pos
 			container.add_child(instance)
+			for p in players_container.get_children():
+				if p is CharacterBody2D:
+					instance.add_collision_exception_with(p)
 			instance.setup(tile_data.get("item_id", ""), int(tile_data.get("count", 1)))
 			instance.picked_up.connect(remove_world_item_from_chunk)
 	# After All generation is done reload past mobs
@@ -824,7 +859,7 @@ func generate_forest(tile_pos, chunk_coords: Vector2i):
 		if tile_hash(tile_pos, 5) > 0.95:
 			var container = spawn_object(tile_pos, chunk_coords, placeable)
 			if container != null:
-				var container_types = [container.OBJECT_TYPE.BARREL_1, container.OBJECT_TYPE.CRATE_1]
+				var container_types = [container.OBJECT_TYPE.OAK_CAMPFIRE, container.OBJECT_TYPE.CRATE_1]
 				container.object_type = container_types[int(tile_hash(tile_pos, 6) * container_types.size())]
 
 	else: # FOREST
@@ -1047,6 +1082,7 @@ func _on_player_spawned(node: Node):
 	node.set_multiplayer_authority(id)
 	if id == multiplayer.get_unique_id():
 		player = node
+		focus_node = player
 		set_process(true)
 		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
 		if inventory_ui:
@@ -1071,18 +1107,15 @@ func display_tile_to_world_tile(display_pos: Vector2i) -> Vector2i:
 func _recenter_tilemap(new_center_chunk: Vector2i):
 	var chunk_offset = new_center_chunk - tilemap_anchor_chunk
 	var tile_offset = chunk_offset * chunk_size
-	
 	tilemap_anchor_chunk = new_center_chunk
-
+	
 	var pixel_offset = Vector2(
 		chunk_offset.x * chunk_size * TILE_SIZE_PIXELS,
 		chunk_offset.y * chunk_size * TILE_SIZE_PIXELS
 	)
 	tilemap.global_position += pixel_offset
 	tilemap.set_notify_transform(true)
-
-	var cells_to_move: Dictionary = {} 
-
+	
 	for layer_id in layers_array:
 		var used_cells = tilemap.get_used_cells(layer_id)
 		var moved_cells = []
@@ -1095,20 +1128,12 @@ func _recenter_tilemap(new_center_chunk: Vector2i):
 				tilemap.get_cell_atlas_coords(layer_id, cell_pos),
 				tilemap.get_cell_alternative_tile(layer_id, cell_pos)
 			]
-		cells_to_move[layer_id] = moved_cells
-
-	for layer_id in layers_array:
-		var used_cells = tilemap.get_used_cells(layer_id)
-		for cell_pos in used_cells:
-			tilemap.set_cell(layer_id, cell_pos, -1)
-
-	for layer_id in layers_array:
-		for cell in cells_to_move[layer_id]:
+		tilemap.clear_layer(layer_id)
+		for cell in moved_cells:
 			tilemap.set_cell(layer_id, cell[0], cell[1], cell[2], cell[3])
-
+	
 	if tilemap.has_method("reset_physics_interpolation"):
 		tilemap.reset_physics_interpolation()
-		
 	if is_instance_valid(player):
 		var camera = player.get_node_or_null("Camera2D")
 		if is_instance_valid(camera) and camera.enabled:

@@ -13,10 +13,6 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3vq1g"]
 size = Vector2(10, 7)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ur7pv"]
-atlas = ExtResource("10_y4r1p")
-region = Rect2(190.988, 12.9031, 8.14169, 3.20971)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_3v2ag"]
 atlas = ExtResource("10_y4r1p")
 region = Rect2(32, 18, 12, 9)
@@ -51,6 +47,10 @@ atlas = ExtResource("9_jej6c")
 [sub_resource type="AtlasTexture" id="AtlasTexture_d2wvv"]
 atlas = ExtResource("10_y4r1p")
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_ur7pv"]
+atlas = ExtResource("4_ur7pv")
+region = Rect2(24.988125, 23.988125, 12.124828, 4.073185)
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_3vq1g"]
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
@@ -79,9 +79,11 @@ offset_bottom = 40.0
 
 [node name="Sprite2D" type="Sprite2D" parent="PlayerBody"]
 visible = false
-texture = SubResource("AtlasTexture_ur7pv")
+texture = ExtResource("8_3v2ag")
 centered = false
 offset = Vector2(-8, -16)
+region_enabled = true
+region_rect = Rect2(24.83008, 17.95502, 12.169836, 4.198948)
 
 [node name="Shadow" type="Sprite2D" parent="PlayerBody"]
 position = Vector2(0, 3)

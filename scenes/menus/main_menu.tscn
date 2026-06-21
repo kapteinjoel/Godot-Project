@@ -25,13 +25,26 @@ shader_parameter/noise_scroll_direction = Vector2(1, 0)
 [node name="MainMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
 script = ExtResource("1_gm3hr")
 
-[node name="Fog" type="ColorRect" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+offset = Vector2(-2880, -1620)
+scale = Vector2(4, 4)
+transform = Transform2D(4, 0, 0, 4, -2880, -1620)
+
+[node name="Background" type="ColorRect" parent="CanvasLayer"]
+visible = false
+z_index = -5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.45098, 0, 1)
+
+[node name="Fog" type="ColorRect" parent="CanvasLayer"]
+visible = false
 material = SubResource("ShaderMaterial_472i7")
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -43,23 +56,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0196078, 0.898039, 0.168627, 1)
 
-[node name="Background" type="ColorRect" parent="."]
-visible = false
-z_index = -5
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.45098, 0, 1)
-
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(960, 540)
-zoom = Vector2(4, 4)
-
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -73,30 +70,35 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="SinglePlayer" type="Button" parent="VBoxContainer"]
+[node name="SinglePlayer" type="Button" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 text = "Single Player"
 
-[node name="Multiplayer" type="Button" parent="VBoxContainer"]
+[node name="Multiplayer" type="Button" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 text = "Multiplayer
 "
 
-[node name="Settings" type="Button" parent="VBoxContainer"]
+[node name="Settings" type="Button" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 text = "Settings"
 
-[node name="Quit" type="Button" parent="VBoxContainer"]
+[node name="Quit" type="Button" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 text = "Exit Game
 "
 
-[node name="Menubutton" type="Sprite2D" parent="."]
+[node name="Menubutton" type="Sprite2D" parent="CanvasLayer"]
 visible = false
 position = Vector2(962, 594)
 texture = ExtResource("3_2o76q")
 
-[connection signal="pressed" from="VBoxContainer/SinglePlayer" to="." method="_on_single_player_pressed"]
-[connection signal="pressed" from="VBoxContainer/Multiplayer" to="." method="_on_multiplayer_pressed"]
-[connection signal="pressed" from="VBoxContainer/Settings" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="VBoxContainer/Quit" to="." method="_on_quit_pressed"]
+[node name="Menubutton2" type="Sprite2D" parent="CanvasLayer"]
+visible = false
+position = Vector2(959, 558)
+texture = ExtResource("3_2o76q")
+
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/SinglePlayer" to="." method="_on_single_player_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Multiplayer" to="." method="_on_multiplayer_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Quit" to="." method="_on_quit_pressed"]

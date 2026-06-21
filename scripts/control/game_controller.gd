@@ -8,8 +8,8 @@ var current_gui_scene
 
 func _ready() -> void:
 	Global.game_controller = self
+	change_game_scene("res://scenes/game/game.tscn", false, false, func(instance): instance.get_node("World").preview_mode = true)
 	change_gui_scene("res://scenes/menus/main_menu.tscn")
-	current_game_scene = null
 	
 func _process(_delta) -> void:
 	pass
@@ -26,7 +26,7 @@ func change_gui_scene(new_scene: String, delete: bool = true, keep_running: bool
 	gui.add_child(new)
 	current_gui_scene = new
 
-func change_game_scene(new_scene, delete: bool = true, keep_running: bool = false) -> void:
+func change_game_scene(new_scene, delete: bool = true, keep_running: bool = false, pre_setup: Callable = Callable()) -> void:
 	if current_game_scene != null:
 		if delete:
 			current_game_scene.queue_free()
@@ -34,21 +34,17 @@ func change_game_scene(new_scene, delete: bool = true, keep_running: bool = fals
 			current_game_scene.visible = false
 		else:
 			game.remove_child(current_game_scene)
-
 	var new_instance
-
-	# Check if we were given a string path or a preloaded scene
 	if new_scene is String:
-		# If it's a string, load it from disk
 		new_instance = load(new_scene).instantiate()
 	elif new_scene is PackedScene:
-		# If it's a PackedScene, just instantiate it
 		new_instance = new_scene.instantiate()
 		print('using preload')
 	else:
 		printerr("Invalid scene type passed to change_game_scene.")
 		return
-
+	if pre_setup.is_valid():
+		pre_setup.call(new_instance)
 	game.add_child(new_instance)
 	current_game_scene = new_instance
 	
