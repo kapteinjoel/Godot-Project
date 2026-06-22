@@ -70,6 +70,7 @@ func refresh(inventory: Array) -> void:
 			inventory_slots[i].set_slot(inventory[i]["item_id"], inventory[i]["count"])
 		else:
 			inventory_slots[i].clear_slot()
+	
 
 func move_slot(from_index: int, to_index: int) -> void:
 	var player = get_tree().get_first_node_in_group("player")

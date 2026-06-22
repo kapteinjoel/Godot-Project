@@ -27,7 +27,44 @@ offset_right = 1920.0
 offset_bottom = 1080.0
 script = ExtResource("1_ms7e0")
 
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+offset = Vector2(-2880, -1620)
+scale = Vector2(4, 4)
+transform = Transform2D(4, 0, 0, 4, -2880, -1620)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -53.5
+offset_top = -85.5
+offset_right = 53.5
+offset_bottom = 85.5
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Host" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Host
+"
+
+[node name="JoinInput" type="LineEdit" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Join" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Join"
+
+[node name="Back" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Back
+"
+
 [node name="Fog" type="ColorRect" parent="."]
+visible = false
 material = SubResource("ShaderMaterial_472i7")
 layout_mode = 1
 anchors_preset = 15
@@ -42,6 +79,7 @@ grow_vertical = 2
 color = Color(0.0196078, 0.898039, 0.168627, 1)
 
 [node name="Background" type="ColorRect" parent="."]
+visible = false
 z_index = -5
 layout_mode = 1
 anchors_preset = 15
@@ -51,47 +89,11 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.45098, 0, 1)
 
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(960, 540)
-zoom = Vector2(4, 4)
-
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -53.5
-offset_top = -85.5
-offset_right = 53.5
-offset_bottom = 85.5
-grow_horizontal = 2
-grow_vertical = 2
-alignment = 1
-
-[node name="Host" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-text = "Host
-"
-
-[node name="JoinInput" type="LineEdit" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="Join" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-text = "Join"
-
-[node name="Back" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-text = "Back
-"
-
 [node name="Menubutton" type="Sprite2D" parent="."]
 visible = false
 position = Vector2(962, 594)
 texture = ExtResource("3_q1c4l")
 
-[connection signal="pressed" from="VBoxContainer/Host" to="." method="_on_host_pressed"]
-[connection signal="pressed" from="VBoxContainer/Join" to="." method="_on_join_pressed"]
-[connection signal="pressed" from="VBoxContainer/Back" to="." method="_on_quit_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Host" to="." method="_on_host_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Join" to="." method="_on_join_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Back" to="." method="_on_quit_pressed"]

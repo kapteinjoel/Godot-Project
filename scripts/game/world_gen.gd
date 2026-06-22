@@ -29,7 +29,6 @@ const RECENTER_FORCE_CHUNKS := 50   # force it regardless if drift gets this lar
 @export var placeable: PackedScene = preload("res://scenes/game/worldgen/staticobject.tscn")
 @export var world_item_scene: PackedScene = preload("res://scenes/game/worlditem.tscn")
 
-
 var temperature := FastNoiseLite.new()
 var moisture := FastNoiseLite.new()
 var altitude := FastNoiseLite.new()
@@ -193,6 +192,7 @@ var HOUSE_1 = [
 	[Vector2i(7,4), Layers.FLOOR, Terrain.WOOD_FLOOR],
 	[Vector2i(1,5), Layers.FLOOR, Terrain.WOOD_FLOOR, "WOOD_DOOR_CLOSED"],
 ]
+
 func _ready() -> void:
 	
 	set_process(false)
@@ -205,18 +205,17 @@ func _ready() -> void:
 	var item = ItemRegistry.get_item("WOOD_LOG")
 	if item:
 		print("Found item: ", item.display_name)
-	#ts = tilemap.tile_set
-	#terrain = BetterTerrain.get_terrain(ts, Terrain.SAND)
-	#original_cats = terrain.categories.duplicate()
+
 	layers_array = Layers.values()
+	
 	# Load in tiles changed by the player
-	if Global.world_data.has("changed_tiles_by_chunk"):
+	if preview_mode:
+		changed_tiles_by_chunk = {}
+	elif Global.world_data.has("changed_tiles_by_chunk"):
 		changed_tiles_by_chunk = Global.world_data.changed_tiles_by_chunk
 	else:
-		# If it's a new player joining, start with an empty dictionary
-		# The Host will send the real data via RPC shortly after
 		changed_tiles_by_chunk = {}
-	
+		
 	# World gen settings
 	object_spawn_rng.seed = Global.world_data.seed
 	print("World is generating with seed: " + str(Global.world_data.seed))
@@ -247,12 +246,12 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
-	
+	var hud = get_tree().get_first_node_in_group("hud")
 	if preview_mode:
 		preview_camera.enabled = true
 		focus_node = preview_camera
-		var hud = get_tree().get_first_node_in_group("hud")
 		if hud:
+			pass
 			hud.visible = false
 			hud.process_mode = Node.PROCESS_MODE_DISABLED
 		mob_manager.set_process(false)
@@ -261,8 +260,8 @@ func _ready() -> void:
 	elif multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-		$SaveTimer.timeout.connect(_on_save_timer_timeout) # Start timer to save world data
-		# Spawn the host (you)
+		$SaveTimer.timeout.connect(_on_save_timer_timeout)
+		
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
 		focus_node = player
@@ -278,7 +277,10 @@ func _process(delta: float) -> void:
 		preview_camera.position += preview_camera_speed * delta
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	
+		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+		if inventory_ui:
+			inventory_ui.refresh(player.inventory)
+		
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
 

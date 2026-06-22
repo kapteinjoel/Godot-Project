@@ -5,18 +5,26 @@ extends Panel
 @onready var count_label: Label = $CountLabel
 
 var _icon_atlas: Texture2D = preload("res://assets/images/items/item_icons.png")
+#var _icon_atlas: Texture2D = preload("res://assets/images/tilesets/fire_shader_.png")
+
 var slot_index: int = -1
 var item_id: String = ""
 var count: int = 0  
 
+
+func _ready() -> void:
+	print('icon atlas: ' , _icon_atlas)
+	
 func set_slot(id: String, amount: int) -> void:
-	item_id = id    # store it
-	count = amount  # store it
+	item_id = id
+	print('item_id: ',item_id)
+	count = amount
 	if item_id == "":
 		clear_slot()
 		return
 	var item = ItemRegistry.get_item(item_id)
 	if item.is_empty():
+		print("set_slot: registry lookup FAILED for ", item_id)
 		return
 	var atlas = AtlasTexture.new()
 	atlas.atlas = _icon_atlas
@@ -24,6 +32,7 @@ func set_slot(id: String, amount: int) -> void:
 	icon.texture = atlas
 	count_label.text = str(count) if count > 1 else ""
 	count_label.visible = true
+	
 
 func clear_slot() -> void:
 	item_id = ""
