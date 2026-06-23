@@ -9,15 +9,8 @@ const CHARACTERS_DIR_PATH = "user://characters/"
 @onready var screen_width = get_viewport().size.x / 4
 @onready var screen_height = get_viewport().size.y / 4
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	# Check if the character list container node was found.
-	if character_list_container == null:
-		print("Error: Node not found at path 'ScrollContainer/VBoxContainer'")
-		return
-	# Load the character buttons when the scene is ready.
-	
-	vbox.custom_minimum_size = Vector2(screen_width / 3, screen_height / 2)
+	vbox.custom_minimum_size = Vector2(screen_width / 3, screen_height)
 	_load_character_buttons()
 
 # This function reads the characters directory and creates a button for each character file.
@@ -39,26 +32,23 @@ func _load_character_buttons() -> void:
 
 	# Loop through all files in the directory.
 	var file_name = dir.get_next()
-	# Loop through all files in the directory.
 
 	while file_name != "":
-		# We're looking for files that end with the ".json" extension.
 		if file_name.ends_with(".json"):
-			# 1. Create a new Panel node to be the container.
+			# Create a new Panel node to be the container.
 			var panel = Panel.new()
+			
 			# Make the panel expand to fill the grid cell it's placed in.
 			panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			#panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
 			# Apply the minimum size to the panel, not the button.
 			panel.custom_minimum_size = Vector2(screen_width / 3, screen_height / 6)
 
-			# 2. Create the Button node.
+			# Create the Button node.
 			var character_button = Button.new()
+	
 			
-			# Make the button fill the entire panel.
-			#character_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			
-			# Get the character name from the file name (e.g., "my_character.json" becomes "My character").
+			# Get the character name from the file name.
 			var character_name = file_name.replace(".json", "").replace("_", " ").capitalize()
 			
 			# Set the button's text to the character name.
@@ -68,10 +58,10 @@ func _load_character_buttons() -> void:
 			var file_path = CHARACTERS_DIR_PATH + file_name
 			character_button.pressed.connect(_on_character_button_pressed.bind(file_path))
 			
-			# 3. Add the button as a child of the panel.
+			# Add the button as a child of the panel.
 			panel.add_child(character_button)
 			
-			# 4. Add the panel (with the button inside it) to your GridContainer.
+			# Add the panel (with the button inside it) to your GridContainer.
 			character_list_container.add_child(panel)
 		
 		# Move to the next file in the directory.
@@ -80,9 +70,7 @@ func _load_character_buttons() -> void:
 	# Stop the directory listing.
 	dir.list_dir_end()
 
-# This function is called every frame.
 func _process(_delta: float) -> void:
-	# The _delta parameter is unused, so we prefix it with an underscore.
 	pass
 
 # This function is called when a character button is pressed.
@@ -102,7 +90,7 @@ func _on_character_button_pressed(file_path: String) -> void:
 	if character_data != null:
 		print("Loaded character: " + character_data.name)
 
-		# Use data to start the game
+		# Use data to load the character in once a world is selected. 
 		Global.character_data = character_data
 		Global.game_controller.change_gui_scene("res://scenes/menus/select_world.tscn")
 	else:

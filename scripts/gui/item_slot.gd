@@ -10,14 +10,9 @@ var _icon_atlas: Texture2D = preload("res://assets/images/items/item_icons.png")
 var slot_index: int = -1
 var item_id: String = ""
 var count: int = 0  
-
-
-func _ready() -> void:
-	print('icon atlas: ' , _icon_atlas)
 	
 func set_slot(id: String, amount: int) -> void:
 	item_id = id
-	print('item_id: ',item_id)
 	count = amount
 	if item_id == "":
 		clear_slot()
@@ -33,7 +28,6 @@ func set_slot(id: String, amount: int) -> void:
 	count_label.text = str(count) if count > 1 else ""
 	count_label.visible = true
 	
-
 func clear_slot() -> void:
 	item_id = ""
 	count = 0

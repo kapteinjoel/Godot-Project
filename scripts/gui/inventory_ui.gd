@@ -26,7 +26,7 @@ func _ready() -> void:
 		hotbar_slots.append(slot)
 	hotbar_slots[0].set_selected(true)
 
-	for i in range(INVENTORY_SIZE):
+	for i in range(INVENTORY_SIZE):	
 		var slot = ItemSlot.instantiate()
 		slot.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 		slot.slot_index = i

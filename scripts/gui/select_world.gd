@@ -17,7 +17,7 @@ func _ready() -> void:
 		return
 	# Load the world buttons when the scene is ready.
 	
-	vbox.custom_minimum_size = Vector2(screen_width / 3, screen_height / 2)
+	vbox.custom_minimum_size = Vector2(screen_width / 3, screen_height)
 	_load_world_buttons()
 
 # This function reads the worlds directory and creates a button for each world file.

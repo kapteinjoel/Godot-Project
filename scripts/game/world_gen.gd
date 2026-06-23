@@ -6,8 +6,8 @@ const RIVER_HALF_WIDTH = 4.5    # Changes river tile diameter
 const RIVER_BANK_WIDTH = 1.5    # bank tiles on top of that
 const MIN_TILE_WIDTH_FOR_ISLAND = 17 # The river must be at least this many tiles wide to get an island
 const ISLAND_NOISE_THRESHOLD = 0.01  # Lower = bigger islands, Higher = smaller/fewer islands
-const RECENTER_DRIFT_CHUNKS := 30   # prefer to recenter here when standing still
-const RECENTER_FORCE_CHUNKS := 50   # force it regardless if drift gets this large
+const RECENTER_DRIFT_CHUNKS := 5   # prefer to recenter here when standing still
+const RECENTER_FORCE_CHUNKS := 20  # force it regardless if drift gets this large
 
 @onready var tilemap: TileMap = $WorldTileMap
 @onready var tilefollower: Sprite2D = $TileFollower
@@ -52,6 +52,7 @@ var chunks_requiring_direct_update: Dictionary = {}
 var pending_terrain_updates: Array = []
 var current_change_set = null
 var active_change_sets: Array = []
+var chunks_cleared_during_changeset: Dictionary = {}
 var focus_node: Node2D
 
 # The tilemap layer for the player to edit tiles at
@@ -268,7 +269,6 @@ func _ready() -> void:
 		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
 		if inventory_ui:
 			player.inventory_changed.connect(inventory_ui.refresh)
-			inventory_ui.refresh(player.inventory)
 		mob_manager.set_process(false)
 		set_process(true)
 
@@ -298,15 +298,29 @@ func _process(delta: float) -> void:
 
 	load_chunks_around(center_chunk, load_all_chunks_at_once)
 	unload_far_chunks(center_chunk)
+	
 	for i in range(active_change_sets.size() - 1, -1, -1):
 		var change_set = active_change_sets[i]
 		if BetterTerrain.is_terrain_changeset_ready(change_set):
 			BetterTerrain.wait_for_terrain_changeset(change_set)
 			BetterTerrain.apply_terrain_changeset(change_set)
 			active_change_sets.remove_at(i)
+	
+	if active_change_sets.is_empty() and not chunks_cleared_during_changeset.is_empty():
+		for chunk_coords in chunks_cleared_during_changeset.keys():
+			if not generated_chunks.has(chunk_coords):
+				var start_x = chunk_coords.x * chunk_size
+				var start_y = chunk_coords.y * chunk_size
+				for x in range(start_x, start_x + chunk_size):
+					for y in range(start_y, start_y + chunk_size):
+						var display_pos = world_tile_to_display_tile(Vector2i(x, y))
+						for layer in Layers.keys():
+							tilemap.erase_cell(Layers[layer], display_pos)
+		chunks_cleared_during_changeset.clear()
+	
 	if active_change_sets.is_empty():
 		_flush_terrain_updates()
-
+			
 func _enter_tree() -> void:
 	$Players/MultiplayerSpawner.spawned.connect(_on_player_spawned)
 	print("enter")
@@ -317,6 +331,12 @@ func _input(event):
 	if event.is_action_pressed("change_tile"):
 		var hovered_tile = tilefollower.get_hovered_tile_coords()
 		change_tile_at_location(hovered_tile, players_layer_index, Terrain.WOOD_WALL)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F9:
+		var before = Performance.get_monitor(Performance.OBJECT_COUNT)
+		tilemap.clear()
+		await get_tree().process_frame
+		var after = Performance.get_monitor(Performance.OBJECT_COUNT)
+		print("Before: ", before, " After: ", after, " Diff: ", before - after)
 		
 func _on_save_timer_timeout() -> void:
 	for chunk_coords in dirty_chunks.keys():
@@ -574,6 +594,8 @@ func unload_far_chunks(center_chunk: Vector2i):
 		changed_tiles_by_chunk.erase(chunk)
 
 func clear_chunk(chunk_coords: Vector2i):
+	if not active_change_sets.is_empty():
+		chunks_cleared_during_changeset[chunk_coords] = true
 	var start_x = chunk_coords.x * chunk_size
 	var start_y = chunk_coords.y * chunk_size
 	var area = Rect2i(start_x, start_y, chunk_size, chunk_size)

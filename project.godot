@@ -16,8 +16,11 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="All_For_Naught"
 config/version="1.0.0"
-run/main_scene="res://scenes/menus/game_controller.tscn"
+run/main_scene="uid://bi3aihtq38cfg"
 config/features=PackedStringArray("4.5", "Forward Plus")
+boot_splash/bg_color=Color(1, 1, 1, 1)
+boot_splash/fullsize=false
+boot_splash/image="uid://dmncolqbnvbpa"
 config/icon="res://icon.svg"
 
 [autoload]

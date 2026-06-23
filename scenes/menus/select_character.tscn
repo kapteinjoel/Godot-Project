@@ -32,8 +32,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Select Character
-"
+text = "Select Character"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/CenterContainer/VBoxContainer"]
 layout_mode = 2

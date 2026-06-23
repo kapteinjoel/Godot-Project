@@ -8,7 +8,7 @@
 [ext_resource type="Shader" uid="uid://cxd03ly0r6a6t" path="res://assets/shaders/fog.gdshader" id="5_ftsea"]
 [ext_resource type="Texture2D" uid="uid://d4dsef7ivgb0b" path="res://assets/images/tilesets/minimaptiles.png" id="5_otnwt"]
 [ext_resource type="Texture2D" uid="uid://ohxln8hb5mlu" path="res://assets/images/tilesets/Grass.png" id="5_y7cus"]
-[ext_resource type="Script" uid="uid://bvikmghpxicmt" path="res://scripts/game/inventory_ui.gd" id="6_3xj4h"]
+[ext_resource type="Script" uid="uid://bvikmghpxicmt" path="res://scripts/gui/inventory_ui.gd" id="6_3xj4h"]
 [ext_resource type="Shader" uid="uid://br27bhqqklxe1" path="res://assets/shaders/water2.gdshader" id="6_kp23o"]
 [ext_resource type="Texture2D" uid="uid://dkn61dbysdcfg" path="res://assets/images/tilesets/Water.png" id="6_wg16f"]
 [ext_resource type="Script" uid="uid://bxlbmjx5rr17e" path="res://scripts/game/world_drop_zone.gd" id="7_5v6r0"]

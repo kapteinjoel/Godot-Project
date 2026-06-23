@@ -8,8 +8,10 @@ var current_gui_scene
 
 func _ready() -> void:
 	Global.game_controller = self
-	change_game_scene("res://scenes/game/game.tscn", false, false, func(instance): instance.get_node("World").preview_mode = true)
-	change_gui_scene("res://scenes/menus/main_menu.tscn")
+	change_gui_scene("res://scenes/menus/splash_screen.tscn")
+	await get_tree().create_timer(.1).timeout
+	change_game_scene("res://scenes/game/game.tscn", true, false, func(instance): instance.get_node("World").preview_mode = true)
+	
 	
 func _process(_delta) -> void:
 	pass
@@ -28,7 +30,7 @@ func change_gui_scene(new_scene: String, delete: bool = true, keep_running: bool
 
 func change_game_scene(new_scene, delete: bool = true, keep_running: bool = false, pre_setup: Callable = Callable()) -> void:
 	if current_game_scene != null:
-		if delete:
+		if delete:		
 			current_game_scene.queue_free()
 		elif keep_running:
 			current_game_scene.visible = false
@@ -47,4 +49,9 @@ func change_game_scene(new_scene, delete: bool = true, keep_running: bool = fals
 		pre_setup.call(new_instance)
 	game.add_child(new_instance)
 	current_game_scene = new_instance
-	
+
+func clear_game_scene() -> void:
+	if current_game_scene != null:
+		game.remove_child(current_game_scene)
+		current_game_scene.queue_free()
+		current_game_scene = null

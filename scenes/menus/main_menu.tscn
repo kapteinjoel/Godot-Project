@@ -1,26 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://d0a6lfupbs1od"]
+[gd_scene load_steps=2 format=3 uid="uid://d0a6lfupbs1od"]
 
 [ext_resource type="Script" uid="uid://ysbm85efxnpi" path="res://scripts/gui/main_menu.gd" id="1_gm3hr"]
-[ext_resource type="Shader" uid="uid://cxd03ly0r6a6t" path="res://assets/shaders/fog.gdshader" id="2_5lglp"]
-[ext_resource type="Texture2D" uid="uid://g7m6vi4ixxrc" path="res://assets/images/ui/menubutton.png" id="3_2o76q"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_5u42d"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_p0jbd"]
-width = 1920
-height = 1080
-noise = SubResource("FastNoiseLite_5u42d")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_472i7"]
-shader = ExtResource("2_5lglp")
-shader_parameter/color = Color(0.798479, 0.816566, 0.965641, 1)
-shader_parameter/OCTAVES = 4
-shader_parameter/enable_pixelation = true
-shader_parameter/pixelation_amount = 100
-shader_parameter/fog_mask = SubResource("NoiseTexture2D_p0jbd")
-shader_parameter/fog_direction = Vector2(1, 1)
-shader_parameter/scroll_noise_tex = false
-shader_parameter/noise_scroll_direction = Vector2(1, 0)
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -31,30 +11,6 @@ script = ExtResource("1_gm3hr")
 offset = Vector2(-2880, -1620)
 scale = Vector2(4, 4)
 transform = Transform2D(4, 0, 0, 4, -2880, -1620)
-
-[node name="Background" type="ColorRect" parent="CanvasLayer"]
-visible = false
-z_index = -5
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.45098, 0, 1)
-
-[node name="Fog" type="ColorRect" parent="CanvasLayer"]
-visible = false
-material = SubResource("ShaderMaterial_472i7")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 670.0
-offset_top = 364.0
-offset_right = -670.0
-offset_bottom = -363.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.0196078, 0.898039, 0.168627, 1)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
 anchors_preset = 8
@@ -87,16 +43,6 @@ text = "Settings"
 layout_mode = 2
 text = "Exit Game
 "
-
-[node name="Menubutton" type="Sprite2D" parent="CanvasLayer"]
-visible = false
-position = Vector2(962, 594)
-texture = ExtResource("3_2o76q")
-
-[node name="Menubutton2" type="Sprite2D" parent="CanvasLayer"]
-visible = false
-position = Vector2(959, 558)
-texture = ExtResource("3_2o76q")
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/SinglePlayer" to="." method="_on_single_player_pressed"]
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Multiplayer" to="." method="_on_multiplayer_pressed"]
