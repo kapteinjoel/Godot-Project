@@ -10,8 +10,7 @@ func _ready() -> void:
 	Global.game_controller = self
 	change_gui_scene("res://scenes/menus/splash_screen.tscn")
 	await get_tree().create_timer(.1).timeout
-	change_game_scene("res://scenes/game/game.tscn", true, false, func(instance): instance.get_node("World").preview_mode = true)
-	
+	change_game_scene("res://scenes/menus/menu_backdrop.tscn")
 	
 func _process(_delta) -> void:
 	pass

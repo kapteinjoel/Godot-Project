@@ -15,12 +15,6 @@ const RECENTER_FORCE_CHUNKS := 20  # force it regardless if drift gets this larg
 @onready var players_container = $Players
 @onready var mob_manager = $MobManager
 
-# For scrolling backgrounds in the main menu
-@export var preview_mode: bool = false
-@export var preview_camera_speed: Vector2 = Vector2(24, 10)
-@onready var preview_camera: Camera2D = $PreviewCamera
-
-
 @export var player: Node2D 
 @export var chunk_size := 6 # Must be 6 idk why so leave it
 @export var view_distance := 5 # How many chunks to render around the player
@@ -199,10 +193,8 @@ func _ready() -> void:
 	set_process(false)
 	randomize()
 	
-	if preview_mode:
-		Global.world_data.seed = randi()
-	else:
-		load_saved_chunk_index()
+	
+	load_saved_chunk_index()
 	var item = ItemRegistry.get_item("WOOD_LOG")
 	if item:
 		print("Found item: ", item.display_name)
@@ -210,9 +202,7 @@ func _ready() -> void:
 	layers_array = Layers.values()
 	
 	# Load in tiles changed by the player
-	if preview_mode:
-		changed_tiles_by_chunk = {}
-	elif Global.world_data.has("changed_tiles_by_chunk"):
+	if Global.world_data.has("changed_tiles_by_chunk"):
 		changed_tiles_by_chunk = Global.world_data.changed_tiles_by_chunk
 	else:
 		changed_tiles_by_chunk = {}
@@ -247,25 +237,13 @@ func _ready() -> void:
 	river_warp.seed = int(Global.world_data.seed) + 1337
 	river_warp.frequency = 0.002       # Higher = more winding/snaking
 	
-	var hud = get_tree().get_first_node_in_group("hud")
-	if preview_mode:
-		preview_camera.enabled = true
-		focus_node = preview_camera
-		if hud:
-			pass
-			hud.visible = false
-			hud.process_mode = Node.PROCESS_MODE_DISABLED
-		mob_manager.set_process(false)
-		tilefollower.visible = false
-		set_process(true)
-	elif multiplayer.is_server():
+	if multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 		$SaveTimer.timeout.connect(_on_save_timer_timeout)
 		
 		player = spawn_player(1)
 		player.change_skin_color(Global.character_data.skin_color)
-		focus_node = player
 		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
 		if inventory_ui:
 			player.inventory_changed.connect(inventory_ui.refresh)
@@ -273,13 +251,10 @@ func _ready() -> void:
 		set_process(true)
 
 func _process(delta: float) -> void:
-	if preview_mode:
-		preview_camera.position += preview_camera_speed * delta
-	else:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
-		if inventory_ui:
-			inventory_ui.refresh(player.inventory)
+	
+	var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+	if inventory_ui:
+		inventory_ui.refresh(player.inventory)
 		
 	var center := get_player_tile_coords()
 	var center_chunk := get_chunk_coords(center)
@@ -326,8 +301,6 @@ func _enter_tree() -> void:
 	print("enter")
 	
 func _input(event):
-	if preview_mode:
-		return
 	if event.is_action_pressed("change_tile"):
 		var hovered_tile = tilefollower.get_hovered_tile_coords()
 		change_tile_at_location(hovered_tile, players_layer_index, Terrain.WOOD_WALL)
@@ -387,11 +360,9 @@ func change_tile_at_location(tile_coords: Vector2i, layer_index: int, terrain_ty
 		clear_chunk_object_tiles(chunk_coords)
 	
 func get_player_tile_coords() -> Vector2i:
-	return tilemap.local_to_map(focus_node.global_position)
+	return tilemap.local_to_map(player.global_position)
 
 func is_focus_stationary() -> bool:
-	if preview_mode:
-		return false
 	return is_instance_valid(player) and player.velocity == Vector2.ZERO
 
 func get_chunk_file_path(chunk_coords: Vector2i) -> String:

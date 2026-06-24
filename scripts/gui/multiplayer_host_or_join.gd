@@ -17,7 +17,7 @@ func _on_host_pressed() -> void:
 	
 func _on_join_pressed() -> void:
 	# Assuming your LineEdit is named 'JoinInput'
-	var input_id = $VBoxContainer/JoinInput.text 
+	var input_id = $CanvasLayer/VBoxContainer/JoinInput.text 
 	
 	if input_id.is_valid_int():
 		var lobby_id = int(input_id)

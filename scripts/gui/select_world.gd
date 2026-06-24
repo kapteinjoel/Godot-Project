@@ -141,7 +141,8 @@ func _on_world_button_pressed(file_path: String) -> void:
 
 		# Use data to start the game
 		Global.world_data = world_data
-		Global.game_controller.change_game_scene(Global.preloaded_game_scene)
+		Global.game_controller.clear_game_scene()
+		Global.game_controller.change_game_scene("res://scenes/game/game.tscn")
 		Global.game_controller.change_gui_scene("res://scenes/menus/game_paused.tscn")
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 		if Global.is_multiplayer == true:

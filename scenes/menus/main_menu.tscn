@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://d0a6lfupbs1od"]
+[gd_scene load_steps=3 format=3 uid="uid://d0a6lfupbs1od"]
 
 [ext_resource type="Script" uid="uid://ysbm85efxnpi" path="res://scripts/gui/main_menu.gd" id="1_gm3hr"]
+[ext_resource type="Texture2D" uid="uid://chmvwnxe7ny4h" path="res://assets/images/ui/titlelogo.png" id="2_ovrgc"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -26,6 +27,16 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
+[node name="Label3" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Titlelogo" type="TextureRect" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+texture = ExtResource("2_ovrgc")
+
+[node name="Label" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
 [node name="SinglePlayer" type="Button" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 text = "Single Player"
@@ -43,6 +54,9 @@ text = "Settings"
 layout_mode = 2
 text = "Exit Game
 "
+
+[node name="Label2" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/SinglePlayer" to="." method="_on_single_player_pressed"]
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Multiplayer" to="." method="_on_multiplayer_pressed"]

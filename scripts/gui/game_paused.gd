@@ -37,7 +37,7 @@ func _on_exit_to_main_menu_pressed() -> void:
 	Global.is_multiplayer = false
 	get_tree().paused = false
 	Global.game_controller.clear_game_scene()
-	Global.game_controller.change_game_scene("res://scenes/game/game.tscn", false, false, func(instance): instance.get_node("World").preview_mode = true)
+	Global.game_controller.change_game_scene("res://scenes/menus/menu_backdrop.tscn")
 	Global.game_controller.change_gui_scene("res://scenes/menus/main_menu.tscn")
 		
 func _on_exit_game_pressed() -> void:
