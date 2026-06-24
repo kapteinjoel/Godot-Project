@@ -14,6 +14,10 @@ shader_parameter/balance = 0.0
 shader_parameter/octaves = 10.0
 shader_parameter/pixel_size = 500.0000237025
 shader_parameter/time_offset = 50.0
+shader_parameter/dither_strength = 0.1670000079325
+shader_parameter/dither_pixel_size = 4.000000142499999
+shader_parameter/dither_levels = 8.0
+shader_parameter/dither_brightness = 1.0000000475
 
 [node name="MenuBackDrop" type="Control"]
 layout_mode = 3

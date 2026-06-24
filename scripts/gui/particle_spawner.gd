@@ -129,9 +129,14 @@ func _spawn_particle() -> void:
 		.set_ease(Tween.EASE_OUT)\
 		.set_trans(Tween.TRANS_SINE)
 	
+	var particle_id = particle.get_instance_id()
+	var tween_id = bob_tween.get_instance_id()
+
 	var on_expire = func():
-		if is_instance_valid(bob_tween):
-			bob_tween.kill()
-		if is_instance_valid(particle):
-			particle.queue_free()
+		var p = instance_from_id(particle_id)
+		var t = instance_from_id(tween_id)
+		if is_instance_valid(t):
+			t.kill()
+		if is_instance_valid(p):
+			p.queue_free()
 	get_tree().create_timer(this_lifetime + 0.1).timeout.connect(on_expire)
